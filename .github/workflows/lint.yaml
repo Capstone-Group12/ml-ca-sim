@@ -1,0 +1,28 @@
+name: Lint
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      
+      - name: Enable corepack
+        run: corepack Enable
+      
+      - name: Install deps
+        run: pnpm Install
+      
+      - name: Run lint (all apps)
+        run: pnpm lint
