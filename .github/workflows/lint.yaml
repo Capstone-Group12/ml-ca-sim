@@ -46,7 +46,7 @@ jobs:
           restore-keys: ${{ runner.os }}-turbo-
 
       - name: Install deps
-        run: pnpm Install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
       
       - name: Run lint (all apps)
         run: pnpm turbo run lint --cache-dir=$TURBO_CACHE_DIR --summarize
