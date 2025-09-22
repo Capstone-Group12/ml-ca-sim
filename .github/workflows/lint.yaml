@@ -1,8 +1,7 @@
 name: Lint
 
 on:
-  pull_request:
-    branches: [ main ]
+  workflow_call:
 
 permissions:
   contents: read
@@ -13,40 +12,26 @@ jobs:
     env:
       CI: true
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      
       - uses: pnpm/action-setup@v4
         with:
           version: 9.0.0
           run_install: false
-      
-      - name: Enable corepack
-        run: | 
+      - run: | 
           corepack enable
-          corepack prepare pnpm@9.0.0 --activate
-      
-      - name: Cache pnpm store
-        uses: actions/cache@v4
+          corepack prepare pnpm@9.0.0 --activate      
+      - uses: actions/cache@v4
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-
-      
-      - name: Cache Turbo
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: .turbo
           key: ${{ runner.os }}-turbo-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}
           restore-keys: ${{ runner.os }}-turbo-
-
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
-      
-      - name: Run lint (all apps)
-        run: pnpm turbo run lint --cache-dir=.turbo --summarize
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run lint --cache-dir=.turbo --summarize
