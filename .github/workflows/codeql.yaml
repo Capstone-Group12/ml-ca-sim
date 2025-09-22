@@ -3,9 +3,6 @@ name: "CodeQL"
 on:
   workflow_call:
 
-permissions:
-  inherit
-
 jobs:
   analyze:
     runs-on: ubuntu-latest
