@@ -10,19 +10,26 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      CI: true
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
       
       - name: Enable corepack
-        run: corepack Enable
+        run: | 
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
       
       - name: Install deps
-        run: pnpm Install
+        run: pnpm Install --frozen-lockfile
       
       - name: Run lint (all apps)
         run: pnpm lint
