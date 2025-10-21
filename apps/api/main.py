@@ -1,40 +1,34 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 import httpx
 
 app = FastAPI()
 
-class Item(BaseModel):
-    text: str = None
-    is_done: bool = False
+class MessageRequest(BaseModel):
+    message: str
 
-items = []
+class ResponseModel(BaseModel):
+    status: str
+    message: str
 
-@app.get("/")
-def root():
-    return {"Hello" : "World"}
+@app.post("/message", response_model=ResponseModel)
+async def post_message(payload: MessageRequest):
+    # handle frontend -> backend request; return whatever processing you need
+    return ResponseModel(status="ok", message=payload.message)
 
-@app.post("/items")
-def create_item(item: Item):
-    items.append(item)
-    return items;
+@app.get("/message", response_model=ResponseModel)
+async def get_message(message: str):
+    # optional: simple GET retrieval via query param
+    return ResponseModel(status="ok", message=message)
 
-@app.get("/items", response_model=Item)
-def list_items(limit: int = 10):
-    return items[0:limit]
+@app.post("/predict")
+async def predict(payload: MessageRequest):
+    # forward to ML service asynchronously and return its JSON
+    async with httpx.AsyncClient() as client:
+        resp = await client.post("http://ml-service:8001/predict", json={"input": payload.message})
+        resp.raise_for_status()
+        return {"ml_result": resp.json()}
 
-@app.get("/items/{item_id}", response_model=Item)
-def get_item(item_id: int) -> Item:
-    if item_id < len(items):
-        return items[item_id]
-    else:
-        raise HTTPException(status_code=404, detail="Item not found")
-
-# I need to know more about the structure of the data to be accepted and returned
-# Implement below
-# @app.get("/submit/frontend")
-# @app.post("/receive/ml-service") maybe endpoint for ml-service here will be /predict
-# @app.get("/submit/ml-service")
-# app.post("/receive/frontend")
-
-# also implement schema validation in python using pydantic???
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
