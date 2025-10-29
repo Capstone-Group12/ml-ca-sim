@@ -1,6 +1,8 @@
 # Team Roles and Responsibilities
 
-We are approaching the Capstone project with a **role-based structure**. Each team member will lead a specific feature area, while collaborating across boundaries where needed. This ensures accountability, balanced workload, and modular development.
+We are approaching the Capstone project with a **role-based structure**.
+
+Each team member will lead a specific feature area, while collaborating across boundaries where needed. This ensures accountability, balanced workload, and modular development.
 
 ---
 
