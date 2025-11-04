@@ -1,9 +1,0 @@
-import { AttackListSchema } from "./attackSchema";
-
-export const attacks = AttackListSchema.parse([
-  { name: "DDOS", mlModels: ["LSTM", "RANDOM_FOREST"] },
-  { name: "XSS_SQL_INJECTION", mlModels: ["NAIVE_BAYES", "LOGISTIC_REGRESSION"] },
-  { name: "SLOWLORIS", mlModels: ["RANDOM_FOREST", "DECISION_TREE", "SMALL_NN"] },
-  { name: "BRUTE_FORCE", mlModels: ["RANDOM_FOREST", "ISOLATION_FOREST"] },
-  { name: "DNS_POISONING", mlModels: ["RANDOM_FOREST", "GRADIENT_BOOSTING"] },
-]);
