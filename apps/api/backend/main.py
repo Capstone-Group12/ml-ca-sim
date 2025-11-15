@@ -28,16 +28,14 @@ try:
 except FileNotFoundError:
     attacks = []  # fallback; you can seed programmatically if you prefer
 
-# just a lil test
 @app.get("/")
-async def print_hello():
-    return {"message" : "Hello World!"}
+async def backend():
+    return {"message" : "Welcome to the backend API!"}
 
 @app.get("/attacks", response_model=List[Attack])
 async def get_attacks():
     """Return the list of attack definitions (validated)."""
     return attacks
-
 
 @app.get("/metadata")
 async def get_metadata():
