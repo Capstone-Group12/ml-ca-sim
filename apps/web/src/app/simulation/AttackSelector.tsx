@@ -1,4 +1,3 @@
-import react from 'react';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 export type AttackType = 'DDos' | 'XSS/SQL Injection' | 'Port Probing' | 'Brute Force' | 'Sloworis';
@@ -20,7 +19,7 @@ export default function AttackSelector({value, onChange}: Props) {
                 >
                     <MenuItem value = "DDos">DDos</MenuItem>
                     <MenuItem value = "XSS/SQL Injection">XQL/SQL Injection</MenuItem>
-                    <MenuItem value = "Port Probing">Port Probing</MenuItem>    
+                    <MenuItem value = "Port Probing">Port Probing</MenuItem>
                     <MenuItem value = "Brute Force">Brute Force</MenuItem>
                     <MenuItem value = "Sloworis">Sloworis</MenuItem>
                 </Select>

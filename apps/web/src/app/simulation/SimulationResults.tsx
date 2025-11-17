@@ -1,5 +1,5 @@
 import React from "react";
-import {Box, Typography, Paper, Table, TableBody, TableCell, TableHead, TableRow, Tab} from "@mui/material";
+import {Box, Typography, Paper, Table, TableBody, TableCell, TableHead, TableRow} from "@mui/material";
 import {Line } from "react-chartjs-2";
 import {
     Chart as ChartJS,
@@ -7,7 +7,7 @@ import {
     PointElement,
     LinearScale,
     CategoryScale,
-    Title, 
+    Title,
     Tooltip,
     Legend
 } from "chart.js";

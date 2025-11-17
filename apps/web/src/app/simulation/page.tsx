@@ -72,8 +72,3 @@ export default function SimulationPage() {
     </Container>
   );
 }
-
-// small helper to avoid extra import lines in top section
-function PaperBox(props: React.ComponentProps<"div">) {
-  return <Box component="div" {...props} />;
-}
