@@ -6,7 +6,7 @@ export default function Contact() {
       <Typography variant="h3" gutterBottom>
         Contact Us
       </Typography>
-      <Typography variant="body1" paragraph>
+      <Typography variant="body1">
         Fill out the form below to get in touch!
       </Typography>
       <Box component="form" mt={3}>
