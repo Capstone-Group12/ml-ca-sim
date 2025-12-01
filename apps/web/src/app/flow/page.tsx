@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const diagram = `
 sequenceDiagram
     participant User
@@ -28,12 +30,12 @@ export default function FlowPage() {
       </div>
 
       <div className="mt-6 flex justify-center">
-        <a
+        <Link
           href="/"
           className="inline-flex items-center rounded-md border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
         >
           Back to Simulator
-        </a>
+        </Link>
       </div>
     </div>
   );
