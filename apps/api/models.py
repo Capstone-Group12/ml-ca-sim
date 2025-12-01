@@ -1,7 +1,10 @@
-# models.py
+from __future__ import annotations
+
+from datetime import datetime
 from enum import Enum
-from typing import List
-from pydantic import BaseModel, validator
+from typing import List, Sequence
+
+from pydantic import BaseModel, Field, field_validator
 
 class AttackType(str, Enum):
     DDOS = "DDOS"
@@ -24,12 +27,21 @@ class Attack(BaseModel):
     name: AttackType
     mlModels: List[MLModel]
 
-    @validator("mlModels")
-    def non_empty_mlmodels(cls, v):
+    @field_validator("mlModels")
+    @classmethod
+    def non_empty_mlmodels(cls, v: List[MLModel]) -> List[MLModel]:
         if not v:
             raise ValueError("mlModels must be a non-empty array")
         return v
 
-# If you want a top-level list type alias
-from typing import Sequence
+class ScanRow(BaseModel):
+    timestamp: datetime
+    target: str
+    port: int
+    state: str
+    banner: str | None = ""
+
+class ScanCSV(BaseModel):
+    csv_text: str = Field(..., description="CSV with columns: timestamp,target,port,state,banner")
+
 AttackList = Sequence[Attack]

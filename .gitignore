@@ -26,7 +26,9 @@ coverage
 out/
 build
 dist
-
+.vscode
+attacks/*.csv
+attacks/*.json
 
 # Debug
 npm-debug.log*

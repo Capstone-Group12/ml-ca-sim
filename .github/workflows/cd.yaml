@@ -7,18 +7,39 @@ on:
 run-name: CD for ${{ github.event.pull_request.head.ref || github.ref_name }} ${{ github.event.pull_request.number && 'PR#' }}${{ github.event.pull_request.number || '' }}
 
 jobs:
-  build-image:
+  build-frontend:
     uses: NafornitaProjects/GitHub-Actions/.github/workflows/build-docker-image.yaml@main
     with:
-      app_name: capstone
-      dockerfile: Dockerfile
+      app_name: capstone-frontend
+      dockerfile: apps/web/Dockerfile
+      context: .
+    secrets:
+      REGISTRY: ${{ secrets.REGISTRY }}
+
+  build-api:
+    uses: NafornitaProjects/GitHub-Actions/.github/workflows/build-docker-image.yaml@main
+    with:
+      app_name: capstone-api
+      dockerfile: apps/api/Dockerfile
+      context: .
+    secrets:
+      REGISTRY: ${{ secrets.REGISTRY }}
+
+  build-ml:
+    uses: NafornitaProjects/GitHub-Actions/.github/workflows/build-docker-image.yaml@main
+    with:
+      app_name: capstone-ml
+      dockerfile: apps/ml-service/Dockerfile
       context: .
     secrets:
       REGISTRY: ${{ secrets.REGISTRY }}
 
   sync-argocd:
     if: github.ref == 'refs/heads/main'
-    needs: build-image
+    needs:
+      - build-frontend
+      - build-api
+      - build-ml
     runs-on: self-hosted
     steps:
       - name: Login to Argo CD

@@ -1,26 +1,25 @@
-import { Container, Typography, Button, Box } from "@mui/material";
 import Link from "next/link";
+import SimulationPanel from "@/components/SimulationPanel";
 
 export default function Home() {
   return (
-    <Container maxWidth="md" sx={{ mt: 5 }}>
-      <Typography variant="h3" gutterBottom align="center">
-        Welcome to the ML Cyberattack Simulation
-      </Typography>
-      <Typography variant="body1" paragraph align="center">
-        This is the home page built of the Frontend, please click the button below to start the simulation.
-      </Typography>
-
-      <Box mt={3}>
-        <Button
-          variant="contained"
-          color="primary"
-          component={Link}
-          href="/simulation"
+    <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-10 text-center text-white">
+      <div>
+        <h1 className="text-4xl font-semibold">Cyberattack Simulation</h1>
+        <p className="mt-2 text-slate-200">
+          Launch port probing samples and inspect how the ML model classifies traffic.
+        </p>
+        <Link
+          href="/flow"
+          className="mt-3 inline-flex items-center rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/30 hover:bg-white/5"
         >
-          Simulation
-        </Button>
-      </Box>
-    </Container>
+          See system flow diagram
+        </Link>
+      </div>
+
+      <div className="flex w-full justify-center">
+        <SimulationPanel />
+      </div>
+    </div>
   );
 }

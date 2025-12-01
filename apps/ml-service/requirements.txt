@@ -1,0 +1,7 @@
+pandas
+feather-format
+scikit-learn
+xgboost
+fastapi
+uvicorn[standard]
+prometheus-client
