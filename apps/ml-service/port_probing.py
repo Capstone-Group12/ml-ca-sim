@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Tuple
 
-import feather
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
@@ -44,11 +43,11 @@ def load_dataframe(
             use_cache = True
 
     if use_cache:
-        df = feather.read_dataframe(cache_file)
+        df = pd.read_pickle(cache_file)
     elif source_file.exists():
         df = pd.read_csv(source_file)
         cache_file.parent.mkdir(parents=True, exist_ok=True)
-        feather.write_dataframe(df, cache_file)
+        df.to_pickle(df, cache_file)
     else:
         raise FileNotFoundError(f"Training data not found at {source_file}")
 

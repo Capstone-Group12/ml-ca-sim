@@ -1,7 +1,6 @@
 pandas
-feather-format
 scikit-learn
-xgboost
+xgboost==2.0.3
 fastapi
 uvicorn[standard]
 prometheus-client
