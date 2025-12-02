@@ -1,0 +1,359 @@
+[
+  {
+    "timestamp": "2025-12-01T15:05:11.304337",
+    "target": "127.0.0.1",
+    "port": 20,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304340",
+    "target": "127.0.0.1",
+    "port": 21,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304341",
+    "target": "127.0.0.1",
+    "port": 22,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304342",
+    "target": "127.0.0.1",
+    "port": 23,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304343",
+    "target": "127.0.0.1",
+    "port": 25,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304343",
+    "target": "127.0.0.1",
+    "port": 53,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304344",
+    "target": "127.0.0.1",
+    "port": 67,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304345",
+    "target": "127.0.0.1",
+    "port": 68,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304345",
+    "target": "127.0.0.1",
+    "port": 69,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304346",
+    "target": "127.0.0.1",
+    "port": 80,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304347",
+    "target": "127.0.0.1",
+    "port": 110,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304347",
+    "target": "127.0.0.1",
+    "port": 111,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304348",
+    "target": "127.0.0.1",
+    "port": 123,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304349",
+    "target": "127.0.0.1",
+    "port": 135,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304349",
+    "target": "127.0.0.1",
+    "port": 137,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304350",
+    "target": "127.0.0.1",
+    "port": 138,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304350",
+    "target": "127.0.0.1",
+    "port": 139,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304351",
+    "target": "127.0.0.1",
+    "port": 143,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304352",
+    "target": "127.0.0.1",
+    "port": 161,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304352",
+    "target": "127.0.0.1",
+    "port": 389,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304353",
+    "target": "127.0.0.1",
+    "port": 443,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304354",
+    "target": "127.0.0.1",
+    "port": 445,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304354",
+    "target": "127.0.0.1",
+    "port": 465,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304355",
+    "target": "127.0.0.1",
+    "port": 514,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304355",
+    "target": "127.0.0.1",
+    "port": 520,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304356",
+    "target": "127.0.0.1",
+    "port": 587,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304357",
+    "target": "127.0.0.1",
+    "port": 631,
+    "state": "open",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304357",
+    "target": "127.0.0.1",
+    "port": 636,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304358",
+    "target": "127.0.0.1",
+    "port": 993,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304359",
+    "target": "127.0.0.1",
+    "port": 995,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304359",
+    "target": "127.0.0.1",
+    "port": 1080,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304360",
+    "target": "127.0.0.1",
+    "port": 1433,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304361",
+    "target": "127.0.0.1",
+    "port": 1521,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304361",
+    "target": "127.0.0.1",
+    "port": 1723,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304362",
+    "target": "127.0.0.1",
+    "port": 2049,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304362",
+    "target": "127.0.0.1",
+    "port": 2121,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304363",
+    "target": "127.0.0.1",
+    "port": 3306,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304364",
+    "target": "127.0.0.1",
+    "port": 3389,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304364",
+    "target": "127.0.0.1",
+    "port": 3690,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304365",
+    "target": "127.0.0.1",
+    "port": 4444,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304366",
+    "target": "127.0.0.1",
+    "port": 4899,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304366",
+    "target": "127.0.0.1",
+    "port": 5000,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304367",
+    "target": "127.0.0.1",
+    "port": 5060,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304367",
+    "target": "127.0.0.1",
+    "port": 5432,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304368",
+    "target": "127.0.0.1",
+    "port": 5900,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304369",
+    "target": "127.0.0.1",
+    "port": 6000,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304369",
+    "target": "127.0.0.1",
+    "port": 6379,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304370",
+    "target": "127.0.0.1",
+    "port": 8080,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304370",
+    "target": "127.0.0.1",
+    "port": 8443,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304371",
+    "target": "127.0.0.1",
+    "port": 9000,
+    "state": "filtered",
+    "banner": ""
+  },
+  {
+    "timestamp": "2025-12-01T15:05:11.304372",
+    "target": "127.0.0.1",
+    "port": 9090,
+    "state": "filtered",
+    "banner": ""
+  }
+]

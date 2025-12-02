@@ -2,7 +2,7 @@
 
 import React from "react";
 import AttackSelector, { AttackType } from "./AttackSelector";
-import sampleScan from "../../../../simulations/local_scan_20251124_125640.json";
+import sampleScan from "../data/port_probe_fallback.json";
 
 const SUPPORTED_ATTACKS: Record<
   AttackType,

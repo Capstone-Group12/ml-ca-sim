@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim as pruner
+FROM node:22-bookworm-slim AS pruner
 
 WORKDIR /repo
 
@@ -12,7 +12,7 @@ COPY . .
 RUN PKG_NAME="$(node -p "require('./${APP_DIR}/package.json').name")"\
     && pnpm dlx turbo prune --scope="$PKG_NAME" --docker
 
-FROM node:22-bookworm-slim as builder
+FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG APP_DIR=apps/web
 RUN pnpm --filter "./${APP_DIR}" build
 
-FROM node:22-bookworm-slim as runner
+FROM node:22-bookworm-slim AS runner
 
 WORKDIR /app
 
