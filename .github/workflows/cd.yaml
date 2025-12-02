@@ -40,6 +40,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
+          builder: builder
           context: .
           file: apps/ml-service/Dockerfile
           push: true
