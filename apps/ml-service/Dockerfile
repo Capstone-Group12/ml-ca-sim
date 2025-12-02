@@ -14,7 +14,7 @@ RUN apt-get update \
 COPY apps/ml-service/requirements.txt .
 RUN pip install --no-cache-dir --prefer-binary --target=/build/deps -r requirements.txt
 
-FROM python:3-13-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
