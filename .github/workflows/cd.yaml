@@ -43,6 +43,9 @@ jobs:
 
           docker buildx inspect --bootstrap
 
+      - name: Inspect builder
+        run: docker buildx ls
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
