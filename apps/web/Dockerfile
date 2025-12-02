@@ -33,7 +33,7 @@ FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production \
-    PORT=3000 \
+    PORT=80 \
     HOSTNAME=0.0.0.0
 
 ARG APP_DIR=apps/web
@@ -42,5 +42,5 @@ COPY --from=builder /app/${APP_DIR}/.next/standalone ./
 COPY --from=builder /app/${APP_DIR}/public ./public
 COPY --from=builder /app/${APP_DIR}/.next/static ./.next/static
 
-EXPOSE 3000
+EXPOSE 80
 CMD ["node", "server.js"]

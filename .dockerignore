@@ -1,0 +1,15 @@
+.git
+node_modules
+.turbo
+.next
+dist
+out
+coverage
+__pycache__
+*.py[cod]
+*.log
+simulations/
+apps/web/.next/
+apps/web/node_modules/
+apps/api/node_modules/
+apps/ml-service/__pycache__/
