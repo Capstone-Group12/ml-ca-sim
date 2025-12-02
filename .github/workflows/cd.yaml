@@ -36,7 +36,7 @@ jobs:
         run: |
           docker buildx rm builder \
           docker buildx create \
-            --name builder \
+            builder \
             --driver docker-container \
             --driver-opt network=host \
             --use
