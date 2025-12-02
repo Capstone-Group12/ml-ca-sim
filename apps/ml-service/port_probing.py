@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).parent
 
 # cache the dataframe file so every time the program is run, pd doesn't spend time re-reading it
 CACHE_FILE = BASE_DIR / "cached_data.feather"
-SOURCE_FILE = BASE_DIR / "data" / "Recon-PortScan.csv"
+SOURCE_FILE = BASE_DIR / "data" / "Recon-PortScan.csv.gz"
 
 # let's limit the features to only those that will help detect port probing
 DETECTION_FEATURES = [

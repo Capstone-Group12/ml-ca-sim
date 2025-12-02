@@ -6,6 +6,12 @@ dist
 out
 coverage
 __pycache__
+*.venv
+.venv
+**/.venv
+apps/ml-service/.venv/
+apps/ml-service/cached_data.feather
+apps/ml-service/data/*.csv
 *.py[cod]
 *.log
 apps/web/.next/
