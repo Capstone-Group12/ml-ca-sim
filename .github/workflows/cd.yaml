@@ -34,17 +34,13 @@ jobs:
 
       - name: Set up Docker Buildx
         run: |
-          docker buildx use builder || \
+          docker buildx rm builder \
           docker buildx create \
             --name builder \
             --driver docker-container \
             --driver-opt network=host \
             --use
-
           docker buildx inspect --bootstrap
-
-      - name: Inspect builder
-        run: docker buildx ls
 
       - name: Build and push
         uses: docker/build-push-action@v5
