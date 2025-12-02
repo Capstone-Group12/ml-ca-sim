@@ -8,6 +8,7 @@ run-name: CD for ${{ github.event.pull_request.head.ref || github.ref_name }} ${
 
 jobs:
   build-frontend:
+    if: github.ref == 'refs/heads/main'
     uses: NafornitaProjects/GitHub-Actions/.github/workflows/build-docker-image.yaml@main
     with:
       app_name: capstone-frontend
@@ -17,6 +18,7 @@ jobs:
       REGISTRY: ${{ secrets.REGISTRY }}
 
   build-api:
+    if: github.ref == 'refs/heads/main'
     uses: NafornitaProjects/GitHub-Actions/.github/workflows/build-docker-image.yaml@main
     with:
       app_name: capstone-api
@@ -33,9 +35,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        run: |
-          docker buildx use builder
-          docker buildx inspect
+        run: docker buildx use builder
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -45,8 +45,8 @@ jobs:
           file: apps/ml-service/Dockerfile
           push: true
           tags: |
-            192.168.50.92:5001/capstone-ml:latest
-            192.168.50.92:5001/capstone-ml:${{ github.sha }}
+            127.0.0.1:5001/capstone-ml:latest
+            127.0.0.1:5001/capstone-ml:${{ github.sha }}
 
   sync-argocd:
     if: github.ref == 'refs/heads/main'

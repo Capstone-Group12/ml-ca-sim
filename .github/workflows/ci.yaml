@@ -14,9 +14,11 @@ permissions:
 
 jobs:
   lint:
+    if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/lint.yaml
 
   codeql:
+    if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/codeql.yaml
 
   cd-pr:
