@@ -24,7 +24,7 @@ from models import Attack, AttackType, MLModel, ScanCSV, ScanRow
 ML_SERVICE_URL = "http://localhost:8001/predict"
 FRONTEND_ORIGINS = ["http://localhost:3000", "http://localhost:5173"]
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data.json")
-ROOT_DIR = Path(__file__).resolve().parents[2]
+ROOT_DIR = Path(__file__).resolve().parent
 SIMULATIONS_DIR = ROOT_DIR / "simulations"
 GENERATED_DIR = SIMULATIONS_DIR / "generated_payloads"
 GENERATED_DIR.mkdir(parents=True, exist_ok=True)
