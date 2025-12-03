@@ -108,6 +108,9 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8001
+          volumeMounts:
+            - name: ml-dataset
+              mountPath: /app/data
           livenessProbe:
             httpGet:
               path: /ml/health
@@ -127,3 +130,7 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
+      volumes:
+        - name: ml-dataset
+          persistentVolumeClaim:
+            claimName: ml-dataset-pvc
