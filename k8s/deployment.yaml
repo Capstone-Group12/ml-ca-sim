@@ -104,7 +104,7 @@ spec:
     spec:
       containers:
         - name: capstone-ml
-          image: 192.168.50.92:5001/capstone-ml:latest
+          image: 127.0.0.1:5001/capstone-ml:latest
           ports:
             - containerPort: 8001
           livenessProbe:
