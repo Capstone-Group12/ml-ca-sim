@@ -1,46 +1,56 @@
-FROM node:22-bookworm-slim AS pruner
+FROM node:22-alpine AS deps
 
-WORKDIR /repo
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN apk add --no-cache libc6-compat && \
+    corepack enable && \
+    pnpm install -g turbo
 
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+FROM deps AS builder
 
-ARG APP_DIR=apps/web
-ENV APP_DIR=${APP_DIR}
+RUN apk add --no-cache openssl
+
+WORKDIR /app
 
 COPY . .
 
-RUN PKG_NAME="$(node -p "require('./${APP_DIR}/package.json').name")"\
-    && pnpm dlx turbo prune --scope="$PKG_NAME" --docker
+RUN turbo prune --scope=web --docker
 
-FROM node:22-bookworm-slim AS builder
+FROM deps AS installer
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+COPY .gitignore .gitignore
 
-COPY --from=pruner /repo/out/json/ ./
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
 RUN pnpm install --frozen-lockfile
 
-COPY --from=pruner /repo/out/full/ ./
+COPY --from=builder /app/out/full/ .
+COPY turbo.json turbo.json
 
-ENV NEXT_TELEMETRY_DISABLED=1
-ARG APP_DIR=apps/web
-RUN pnpm --filter "./${APP_DIR}" build
+RUN turbo run build --filter=web...
 
-FROM node:22-bookworm-slim AS runner
+FROM deps AS runner
 
 WORKDIR /app
-
 ENV NODE_ENV=production \
-    PORT=3000 \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=80 \
     HOSTNAME=0.0.0.0
 
-ARG APP_DIR=apps/web
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+USER nextjs
 
-COPY --from=builder /app/${APP_DIR}/.next/standalone ./
-COPY --from=builder /app/${APP_DIR}/public ./${APP_DIR}/public
-COPY --from=builder /app/${APP_DIR}/.next/static ./${APP_DIR}/.next/static
+COPY --from=installer /app/apps/web/next.config.ts .
+COPY --from=installer /app/apps/web/package.json .
 
-EXPOSE 3000
-CMD ["node", "apps/web/server.js"]
+COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=installer --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+
+EXPOSE 80
+CMD node apps/web/server.js
