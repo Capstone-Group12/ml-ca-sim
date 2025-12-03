@@ -49,6 +49,15 @@ REQUEST_LATENCY = Histogram(
     "ml_service_request_duration_seconds", "ML service request latency", ["path", "method"]
 )
 
+@app.middleware("http")
+async def strip_ml_prefix(request, call_next):
+    path = request.scope.get("path") or request.url.path
+    if path == "/ml":
+        request.scope["path"] = "/"
+    elif path.startswith("/ml/"):
+        request.scope["path"] = path[3:] or "/"
+    return await call_next(request)
+
 class TrafficSample(BaseModel):
     dst_port: int = Field(..., ge=0, le=65535, description="Destination port")
     src_port: int = Field(..., ge=0, le=65535, description="Source port")

@@ -52,6 +52,15 @@ app.add_middleware(
 )
 
 @app.middleware("http")
+async def strip_api_prefix(request, call_next):
+    path = request.scope.get("path") or request.url.path
+    if path == "/api":
+        request.scope["path"] = "/"
+    elif path.startswith("/api/"):
+        request.scope["path"] = path[4:] or "/"
+    return await call_next(request)
+
+@app.middleware("http")
 async def metrics_middleware(request, call_next):
     start = time.perf_counter()
     response = None
