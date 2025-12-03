@@ -8,7 +8,6 @@ run-name: CD for ${{ github.event.pull_request.head.ref || github.ref_name }} ${
 
 jobs:
   build-frontend:
-    if: github.ref == 'refs/heads/main'
     uses: NafornitaProjects/GitHub-Actions/.github/workflows/build-docker-image.yaml@main
     with:
       app_name: capstone-frontend
@@ -18,7 +17,6 @@ jobs:
       REGISTRY: ${{ secrets.REGISTRY }}
 
   build-api:
-    if: github.ref == 'refs/heads/main'
     uses: NafornitaProjects/GitHub-Actions/.github/workflows/build-docker-image.yaml@main
     with:
       app_name: capstone-api

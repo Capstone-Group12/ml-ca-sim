@@ -14,15 +14,14 @@ permissions:
 
 jobs:
   lint:
-    if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/lint.yaml
 
   codeql:
-    if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/codeql.yaml
 
   cd-pr:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: [lint, codeql]
     uses: ./.github/workflows/cd.yaml
     secrets: inherit
 
