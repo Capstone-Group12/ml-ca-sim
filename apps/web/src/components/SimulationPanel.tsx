@@ -53,7 +53,8 @@ type ScenarioResult = {
 };
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
+  "https://mlcasim.edwardnafornita.com/api";
 
 const palette = {
   panel: "bg-slate-900/80",
