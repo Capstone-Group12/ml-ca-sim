@@ -84,6 +84,10 @@ except FileNotFoundError:
 async def backend():
     return {"message": "Welcome to the backend API!"}
 
+@app.get("/health")
+async def health():
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat() + "Z"}
+
 @app.get("/metrics")
 async def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
