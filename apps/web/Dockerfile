@@ -26,7 +26,7 @@ COPY --from=pruner /repo/out/full/ ./
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG APP_DIR=apps/web
-RUN pnpm turbo run build --filter="${APP_DIR}"
+RUN pnpm --filter "./${APP_DIR}" build
 
 FROM node:22-bookworm-slim AS runner
 
@@ -43,4 +43,4 @@ COPY --from=builder /app/${APP_DIR}/public ./public
 COPY --from=builder /app/${APP_DIR}/.next/static ./.next/static
 
 EXPOSE 80
-CMD ["node", "server.js"]
+CMD ["node", "apps/web/server.js"]

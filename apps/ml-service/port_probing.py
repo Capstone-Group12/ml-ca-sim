@@ -10,7 +10,7 @@ from xgboost import XGBClassifier
 BASE_DIR = Path(__file__).parent
 
 # cache the dataframe file so every time the program is run, pd doesn't spend time re-reading it
-CACHE_FILE = BASE_DIR / "cached_data.feather"
+CACHE_FILE = BASE_DIR / "cached_data.pkl"
 SOURCE_FILE = BASE_DIR / "data" / "Recon-PortScan.csv.gz"
 
 # let's limit the features to only those that will help detect port probing
@@ -47,7 +47,7 @@ def load_dataframe(
     elif source_file.exists():
         df = pd.read_csv(source_file)
         cache_file.parent.mkdir(parents=True, exist_ok=True)
-        df.to_pickle(df, cache_file)
+        df.to_pickle(cache_file)
     else:
         raise FileNotFoundError(f"Training data not found at {source_file}")
 

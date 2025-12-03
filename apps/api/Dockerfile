@@ -3,7 +3,8 @@ FROM python:3.13-slim AS runtime
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PATH="/usr/local/bin:${PATH}"
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

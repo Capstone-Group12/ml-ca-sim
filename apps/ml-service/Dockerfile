@@ -3,7 +3,8 @@ FROM python:3.13-slim AS builder
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PATH="/usr/local/bin:${PATH}"
 
 WORKDIR /app
 
@@ -17,7 +18,8 @@ RUN pip install --no-cache-dir --only-binary=:all: --target=/build/deps -r requi
 FROM python:3.13-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PATH="/usr/local/bin:${PATH}"
 
 WORKDIR /app
 
@@ -26,6 +28,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /build/deps /usr/local/lib/python3.13/site-packages
+COPY --from=builder /build/deps/bin /usr/local/bin
 COPY apps/ml-service/ .
 
 CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
