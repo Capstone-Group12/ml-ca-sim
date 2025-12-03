@@ -54,7 +54,7 @@ type ScenarioResult = {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
-  "https://mlcasim.edwardnafornita.com/api";
+  "https://mlcasim-api.edwardnafornita.com";
 
 const palette = {
   panel: "bg-slate-900/80",

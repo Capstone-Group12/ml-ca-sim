@@ -21,8 +21,12 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 
 from models import Attack, AttackType, MLModel, ScanCSV, ScanRow
 
-ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "https://mlcasim.edwardnafornita.com/ml/predict")
-FRONTEND_ORIGINS = ["http://localhost:3000", "http://localhost:5173"]
+ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://capstone-ml:8001/predict")
+FRONTEND_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://mlcasim.edwardnafornita.com",
+]
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data.json")
 ROOT_DIR = Path(__file__).resolve().parent
 SIMULATIONS_DIR = ROOT_DIR / "simulations"
