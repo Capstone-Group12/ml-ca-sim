@@ -26,6 +26,7 @@ FRONTEND_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     "https://mlcasim.edwardnafornita.com",
+    "https://mlcasim-api.edwardnafornita.com"
 ]
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data.json")
 ROOT_DIR = Path(__file__).resolve().parent
