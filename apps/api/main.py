@@ -81,22 +81,28 @@ except FileNotFoundError:
     attacks = []
 
 @app.get("/")
+@app.get("/api")
+@app.get("/api/")
 async def backend():
     return {"message": "Welcome to the backend API!"}
 
 @app.get("/health")
+@app.get("/api/health")
 async def health():
     return {"status": "ok", "timestamp": datetime.utcnow().isoformat() + "Z"}
 
 @app.get("/metrics")
+@app.get("/api/metrics")
 async def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.get("/attacks", response_model=List[Attack])
+@app.get("/api/attacks", response_model=List[Attack])
 async def get_attacks():
     return attacks
 
 @app.get("/metadata")
+@app.get("/api/metadata")
 async def get_metadata():
     return {
         "attackTypes": [t.value for t in AttackType],
@@ -104,6 +110,7 @@ async def get_metadata():
     }
 
 @app.post("/predict")
+@app.post("/api/predict")
 async def predict(attack: Attack):
     payload = attack.model_dump()
     result = await _post_to_ml(payload)
@@ -217,6 +224,7 @@ def _latest_payload_path() -> Optional[Path]:
     return files[0] if files else None
 
 @app.post("/predict-from-scan-json")
+@app.post("/api/predict-from-scan-json")
 async def predict_from_scan_json(raw: List[dict]):
     rows = sorted(_rows_from_json(raw), key=lambda r: r.timestamp)
     payloads = []
@@ -228,6 +236,7 @@ async def predict_from_scan_json(raw: List[dict]):
     return {"count": len(results), "results": results}
 
 @app.post("/predict-from-scan-csv")
+@app.post("/api/predict-from-scan-csv")
 async def predict_from_scan_csv(body: ScanCSV):
     rows = sorted(_rows_from_csv(body.csv_text), key=lambda r: r.timestamp)
     payloads = []
@@ -239,6 +248,7 @@ async def predict_from_scan_csv(body: ScanCSV):
     return {"count": len(results), "results": results}
 
 @app.post("/run-attack")
+@app.post("/api/run-attack")
 async def run_attack(body: RunAttackRequest):
     attack = body.attack.lower()
     if attack not in ("port probing", "port_probing", "port-probing", "portprobing"):

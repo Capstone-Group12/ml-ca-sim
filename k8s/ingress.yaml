@@ -5,7 +5,6 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     cert-manager.io/cluster-issuer: cloudflare-issuer
-    traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
   tls:
     - hosts:
@@ -22,3 +21,17 @@ spec:
                 name: capstone-frontend
                 port:
                   number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: capstone-api
+                port:
+                  number: 8000
+          - path: /ml
+            pathType: Prefix
+            backend:
+              service:
+                name: capstone-ml
+                port:
+                  number: 8001

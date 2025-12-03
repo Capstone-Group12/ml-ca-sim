@@ -21,7 +21,7 @@ spec:
             - containerPort: 80
           env:
             - name: NEXT_PUBLIC_API_URL
-              value: http://capstone-api:8000
+              value: https://mlcasim.edwardnafornita.com/api
           livenessProbe:
             httpGet:
               path: /
@@ -68,13 +68,13 @@ spec:
               value: http://capstone-ml:8001/predict
           livenessProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: 8000
             initialDelaySeconds: 20
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 5
@@ -110,13 +110,13 @@ spec:
             - containerPort: 8001
           livenessProbe:
             httpGet:
-              path: /health
+              path: /ml/health
               port: 8001
             initialDelaySeconds: 20
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /health
+              path: /ml/health
               port: 8001
             initialDelaySeconds: 5
             periodSeconds: 5

@@ -63,15 +63,18 @@ class PredictionResponse(BaseModel):
     model_metrics: Optional[dict] = None
 
 @app.get("/")
+@app.get("/ml")
+@app.get("/ml/")
 def index() -> Dict[str, str]:
     return {
         "message": "ML service is running",
-        "predict_endpoint": "/predict",
-    "health_endpoint": "/health",
-    "metrics_endpoint": "/metrics",
-}
+        "predict_endpoint": "/ml/predict",
+        "health_endpoint": "/ml/health",
+        "metrics_endpoint": "/ml/metrics",
+    }
 
 @app.get("/health")
+@app.get("/ml/health")
 def health() -> Dict[str, object]:
     REQUEST_COUNT.labels(path="/health", method="GET", status=200).inc()
     REQUEST_LATENCY.labels(path="/health", method="GET").observe(0.0)
@@ -83,10 +86,12 @@ def health() -> Dict[str, object]:
     }
 
 @app.get("/metrics")
+@app.get("/ml/metrics")
 def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.post("/predict", response_model=PredictionResponse)
+@app.post("/ml/predict", response_model=PredictionResponse)
 def predict(sample: TrafficSample) -> PredictionResponse:
     start = time.perf_counter()
     path = "/predict"
