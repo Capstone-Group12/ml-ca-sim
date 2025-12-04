@@ -1,0 +1,81 @@
+name: CD
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+run-name: CD for ${{ github.event.pull_request.head.ref || github.ref_name }} ${{ github.event.pull_request.number && 'PR#' }}${{ github.event.pull_request.number || '' }}
+
+jobs:
+  build-frontend:
+    uses: NafornitaProjects/GitHub-Actions/.github/workflows/build-docker-image.yaml@main
+    with:
+      app_name: capstone-frontend
+      dockerfile: apps/web/Dockerfile
+      context: .
+    secrets:
+      REGISTRY: ${{ secrets.REGISTRY }}
+
+  build-api:
+    uses: NafornitaProjects/GitHub-Actions/.github/workflows/build-docker-image.yaml@main
+    with:
+      app_name: capstone-api
+      dockerfile: apps/api/Dockerfile
+      context: .
+    secrets:
+      REGISTRY: ${{ secrets.REGISTRY }}
+
+  build-ml:
+    name: build
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        run: docker buildx use builder
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          builder: builder
+          context: .
+          file: apps/ml-service/Dockerfile
+          push: true
+          tags: |
+            127.0.0.1:5001/capstone-ml:latest
+            127.0.0.1:5001/capstone-ml:${{ github.sha }}
+
+  sync-argocd:
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - build-frontend
+      - build-api
+      - build-ml
+    runs-on: self-hosted
+    steps:
+      - name: Login to Argo CD
+        uses: clowdhaus/argo-cd-action@main
+        with:
+          version: "2.6.7"
+          command: login
+          options: |
+            ${{ secrets.ARGOCD_SERVER }}
+            --username ${{ secrets.ARGOCD_USERNAME }}
+            --password ${{ secrets.ARGOCD_PASSWORD }}
+            --grpc-web
+            --insecure
+
+      - name: Force refresh
+        uses: clowdhaus/argo-cd-action@main
+        with:
+          version: "2.6.7"
+          command: "app refresh capstone-webapp"
+          options: "--grpc-web --insecure"
+
+      - name: Sync Application
+        uses: clowdhaus/argo-cd-action@main
+        with:
+          version: "2.6.7"
+          command: "app sync capstone-webapp"
+          options: "--grpc-web --insecure"

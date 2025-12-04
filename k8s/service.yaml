@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: capstone-frontend
+  labels:
+    app: capstone-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: capstone-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: capstone-api
+  labels:
+    app: capstone-api
+spec:
+  type: ClusterIP
+  selector:
+    app: capstone-api
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: capstone-ml
+  labels:
+    app: capstone-ml
+spec:
+  type: ClusterIP
+  selector:
+    app: capstone-ml
+  ports:
+    - port: 8001
+      targetPort: 8001
+      protocol: TCP

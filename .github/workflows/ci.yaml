@@ -18,3 +18,8 @@ jobs:
 
   codeql:
     uses: ./.github/workflows/codeql.yaml
+
+  deploy:
+    needs: [lint, codeql]
+    uses: ./.github/workflows/cd.yaml
+    secrets: inherit
