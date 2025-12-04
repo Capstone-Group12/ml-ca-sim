@@ -6,7 +6,7 @@ import socket
 from datetime import datetime
 from typing import List, Tuple
 
-class LocalPortScanner:
+class port_probe:
     TARGET = "127.0.0.1"
     DEFAULT_COMMON_PORTS = list(range(0, 10001))
 
@@ -172,7 +172,7 @@ class LocalPortScanner:
 
 '''
 example usage:
-scanner = LocalPortScanner(
+scanner = port_probe(
     ports="22,80,443",
     concurrency=100,
     timeout=1,
