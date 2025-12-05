@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capstone-frontend
+  labels:
+    app: capstone-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: capstone-frontend
+  template:
+    metadata:
+      labels:
+        app: capstone-frontend
+    spec:
+      containers:
+        - name: capstone-frontend
+          image: registry.edwardnafornita.com/capstone-frontend:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: https://mlcasim-api.edwardnafornita.com
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capstone-api
+  labels:
+    app: capstone-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: capstone-api
+  template:
+    metadata:
+      labels:
+        app: capstone-api
+    spec:
+      containers:
+        - name: capstone-api
+          image: registry.edwardnafornita.com/capstone-api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ML_SERVICE_URL
+              value: http://capstone-ml:8001/predict
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capstone-ml
+  labels:
+    app: capstone-ml
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: capstone-ml
+  template:
+    metadata:
+      labels:
+        app: capstone-ml
+    spec:
+      containers:
+        - name: capstone-ml
+          image: 192.168.50.92:5001/capstone-ml:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8001
+          volumeMounts:
+            - name: ml-dataset
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /ml/health
+              port: 8001
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ml/health
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+      volumes:
+        - name: ml-dataset
+          persistentVolumeClaim:
+            claimName: ml-dataset-pvc
