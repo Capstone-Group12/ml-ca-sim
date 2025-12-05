@@ -1,0 +1,6 @@
+pandas
+scikit-learn
+xgboost==2.0.3
+fastapi
+uvicorn[standard]
+prometheus-client

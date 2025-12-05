@@ -1,9 +1,18 @@
-# API
+# API (FastAPI)
 
-## Startup Commands
+FastAPI backend that sanitizes raw attack outputs and forwards them to the ML service.
+
+## Startup (local)
 
 ```bash
-pnpm dev
+cd apps/api
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
+## Docker
+
+```bash
+docker build -t api-backend apps/api
+docker run -p 8000:8000 api-backend
+```
