@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import List, Optional, Sequence
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import Response
 from pydantic import BaseModel, Field
@@ -327,3 +327,11 @@ async def run_attack(body: RunAttackRequest):
         exec_error or "",
     )
     return response
+
+@app.post("/output-json", status_code=status.HTTP_403_FORBIDDEN)
+@app.post("/api/output-json", status_code=status.HTTP_403_FORBIDDEN)
+async def output_json(data: dict):
+    return {
+        "message": "Forbidden",
+        "received": data
+    }
