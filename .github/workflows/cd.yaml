@@ -55,25 +55,13 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Login to Argo CD
-        uses: clowdhaus/argo-cd-action@main
-        with:
-          version: "2.6.7"
-          command: login
-          options: |
-            ${{ secrets.ARGOCD_SERVER }}
-            --username ${{ secrets.ARGOCD_USERNAME }}
-            --password ${{ secrets.ARGOCD_PASSWORD }}
-            --grpc-web
+        run: |
+          argocd login $ARGOCD_SERVER \
+            --username $ARGOCD_USERNAME \
+            --password $ARGOCD_PASSWORD \
+            --grpc-web \
             --insecure
 
       - name: Sync Application
-        uses: clowdhaus/argo-cd-action@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
-          ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
-          ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
-        with:
-          version: "2.6.7"
-          command: "app sync capstone"
-          options: "--grpc-web --insecure"
+        run: |
+          argocd app sync capstone --grpc-web --insecure
