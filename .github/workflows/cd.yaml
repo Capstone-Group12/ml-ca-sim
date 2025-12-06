@@ -47,7 +47,7 @@ jobs:
             127.0.0.1:5001/capstone-ml:${{ github.sha }}
 
   sync-argocd:
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - build-frontend
       - build-api
@@ -66,16 +66,14 @@ jobs:
             --grpc-web
             --insecure
 
-      - name: Force refresh
-        uses: clowdhaus/argo-cd-action@main
-        with:
-          version: "2.6.7"
-          command: "app refresh capstone-webapp"
-          options: "--grpc-web --insecure"
-
       - name: Sync Application
         uses: clowdhaus/argo-cd-action@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
+          ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
         with:
           version: "2.6.7"
-          command: "app sync capstone-webapp"
+          command: "app sync capstone"
           options: "--grpc-web --insecure"
