@@ -7,13 +7,13 @@ from datetime import datetime
 from typing import List, Tuple
 
 class port_probe:
-    TARGET = "127.0.0.1"
+    TARGET = "192.168.50.253"
     DEFAULT_COMMON_PORTS = list(range(0, 10001))
 
     def __init__(self, ports=None, concurrency=200, timeout=1.5,
                  banner=False, send_probe=False, delay_between_starts=0.0,
-                 out_prefix="local_scan", use_default_common=False):
-        self.ports = ports
+                 out_prefix="local_scan", use_default_common=True):
+        self.ports = DEFAULT_COMMON_PORTS
         self.concurrency = concurrency
         self.timeout = timeout
         self.banner = banner
@@ -153,14 +153,8 @@ class port_probe:
         else:
             self.ports = self.parse_ports(self.ports)
 
-    def ensure_localhost(self):
-        ip = socket.gethostbyname(self.TARGET)
-        if ip not in ("127.0.0.1", "::1"):
-            raise RuntimeError("Target must remain localhost (127.0.0.1).")
-
     def run(self):
         self.resolve_ports()
-        self.ensure_localhost()
 
         print(f"Starting local scan of {len(self.ports)} ports on {self.TARGET}")
         loop = asyncio.get_event_loop()
@@ -170,16 +164,13 @@ class port_probe:
         print(f"\nResults written to: {paths[0]} and {paths[1]}")
 
 
-'''
-example usage:
+
 scanner = port_probe(
-    ports="22,80,443",
-    concurrency=100,
+    ports=None,
+    concurrency=200,
     timeout=1,
     banner=True,
     send_probe=True
 )
 
 scanner.run()
-
-'''
