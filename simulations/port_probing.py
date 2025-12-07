@@ -1,8 +1,8 @@
 import argparse
 import asyncio
-import csv
 import json
 import socket
+import sys
 from datetime import datetime
 from typing import List, Tuple
 
@@ -10,15 +10,15 @@ class port_probe:
     TARGET = "192.168.50.253"
     DEFAULT_COMMON_PORTS = list(range(0, 10001))
 
-    def __init__(self):
-        self.ports = list(range(0,10001))
+    def __init__(self, num_ports):
+        self.ports = list(range(0, int(num_ports) + 1))
         self.concurrency = 200
         self.timeout = 1.5
         self.banner =True
         self.send_probe = True
         self.delay = 0.0
         self.out_prefix = "local_scan"
-        self.use_default_common = True
+        self.use_default_common = False
 
     @staticmethod
     def parse_ports(ports_spec: str) -> List[int]:
@@ -156,7 +156,9 @@ class port_probe:
         print(f"\nResults written to: {paths}")
 
 
-
-scanner = port_probe()
+if len(sys.argv) > 1:
+    scanner = port_probe(sys.argv[1])
+else:
+    scanner = port_probe(10000)
 
 scanner.run()

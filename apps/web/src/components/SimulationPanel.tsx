@@ -6,7 +6,7 @@ import sampleScan from "../data/port_probe_fallback.json";
 
 const SUPPORTED_ATTACKS: Record<
   AttackType,
-  { runName: string; getSample: () => ScanRow[] }
+  { runName: string; getSample: () => ScanRow[], requestCount?: number }
 > = {
   "Port Probing": {
     runName: "Port Probing",
@@ -15,6 +15,7 @@ const SUPPORTED_ATTACKS: Record<
         ...row,
         banner: row.banner || "Port Probing simulated",
       })),
+    requestCount: 100,
   },
   DOS: {
     runName: "DOS",
@@ -69,7 +70,7 @@ export default function SimulationPanel() {
   const [error, setError] = React.useState<string | null>(null);
   const [expandedPayload, setExpandedPayload] = React.useState<Set<number>>(new Set());
   const [expandedResponse, setExpandedResponse] = React.useState<Set<number>>(new Set());
-  const [requestCount, setRequestCount] = React.useState<number>(1);
+  const [requestCount, setRequestCount] = React.useState<number>(100);
   const [running, setRunning] = React.useState(false);
 
   const activeAttack = SUPPORTED_ATTACKS[attackType];
@@ -80,7 +81,7 @@ export default function SimulationPanel() {
       const runResp = await fetch(`${API_BASE_URL}/run-attack`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attack: activeAttack?.runName || "Port Probing", max_age_seconds: 300 }),
+        body: JSON.stringify({ attack: activeAttack?.runName || "Port Probing", requstCount: requestCount, max_age_seconds: 300 }),
       });
       if (!runResp.ok) {
         throw new Error(`run-attack responded with ${runResp.status}`);
@@ -98,7 +99,7 @@ export default function SimulationPanel() {
       throw new Error("No payload rows available to send");
     }
     return fallback;
-  }, [activeAttack]);
+  }, [activeAttack, requestCount]);
 
   const runSimulation = async () => {
     if (!isSupported) {
@@ -191,9 +192,9 @@ export default function SimulationPanel() {
             disabled={running}
             className="w-40 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-white shadow-inner focus:border-white focus:outline-none focus:ring-1 focus:ring-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <option value={1}>1 request</option>
-            <option value={10}>10 requests</option>
-            <option value={20}>20 requests</option>
+            <option value={100}>100 requests</option>
+            <option value={1000}>1k requests</option>
+            <option value={10000}>10k requests</option>
           </select>
         </div>
 
