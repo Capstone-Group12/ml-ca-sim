@@ -81,7 +81,11 @@ export default function SimulationPanel() {
       const runResp = await fetch(`${API_BASE_URL}/run-attack`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attack: activeAttack?.runName || "Port Probing", requstCount: requestCount, max_age_seconds: 300 }),
+        body: JSON.stringify({
+          attack: activeAttack?.runName || "Port Probing",
+          requestCount,
+          max_age_seconds: 300,
+        }),
       });
       if (!runResp.ok) {
         throw new Error(`run-attack responded with ${runResp.status}`);

@@ -30,7 +30,10 @@ FRONTEND_ORIGINS = [
 ]
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data.json")
 ROOT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = ROOT_DIR.parent.parent
 SIMULATIONS_DIR = ROOT_DIR / "simulations"
+if not SIMULATIONS_DIR.exists():
+    SIMULATIONS_DIR = PROJECT_ROOT / "simulations"
 GENERATED_DIR = SIMULATIONS_DIR / "generated_payloads"
 GENERATED_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -206,7 +209,10 @@ async def _execute_port_probing(timeout_s: float = 200.0, param: int = 100) -> P
         str(prefix),
     ]
     proc = await asyncio.create_subprocess_exec(
-        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        cwd=str(SIMULATIONS_DIR.parent),
     )
     try:
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout_s)
