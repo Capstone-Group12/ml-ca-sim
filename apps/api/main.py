@@ -282,7 +282,7 @@ async def run_attack(body: RunAttackRequest):
     source = "generated"
     exec_error = None
     max_age = body.max_age_seconds
-    requestCount = body.requestCount
+    requestCount = int(body.requestCount)
 
     latest = _latest_payload_path()
     if max_age is not None and latest:
