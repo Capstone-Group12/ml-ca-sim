@@ -183,7 +183,7 @@ async def _predict_batch(payloads: Sequence[dict]) -> List[dict]:
             results.append({"input": payload, "error": exc.detail})
     return results
 
-async def _execute_port_probing(timeout_s: float = 12.0) -> Path:
+async def _execute_port_probing(timeout_s: float = 12.0, param) -> Path:
     """
     Run the port probing simulation script and return once the process finishes.
     Raises TimeoutError on timeout and RuntimeError on non-zero exit.
@@ -196,6 +196,7 @@ async def _execute_port_probing(timeout_s: float = 12.0) -> Path:
     cmd = [
         sys.executable,
         str(script),
+        param,
         "--use-default-common",
         "--out-prefix",
         str(prefix),
@@ -271,6 +272,7 @@ async def run_attack(body: RunAttackRequest):
     source = "generated"
     exec_error = None
     max_age = body.max_age_seconds
+    requestCount = body.request_count
 
     latest = _latest_payload_path()
     if max_age is not None and latest:
@@ -283,7 +285,7 @@ async def run_attack(body: RunAttackRequest):
 
     if source != "cached":
         try:
-            await _execute_port_probing()
+            await _execute_port_probing(param=requestCount)
             logger.info("port probing simulation executed successfully")
         except TimeoutError:
             source = "cached"
