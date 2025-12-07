@@ -11,7 +11,7 @@ class port_probe:
     DEFAULT_COMMON_PORTS = list(range(0, 10001))
 
     def __init__(self, num_ports):
-        self.ports = list(range(0, num_ports + 1))
+        self.ports = list(range(0, int(num_ports) + 1))
         self.concurrency = 200
         self.timeout = 1.5
         self.banner =True
