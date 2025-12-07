@@ -132,6 +132,10 @@ async def predict(attack: Attack):
 
 class RunAttackRequest(BaseModel):
     attack: str = Field(..., description="Attack name, only 'Port Probing' is supported")
+    requestCount: number = Field(
+        default=100,
+        description="The number of packets sent to the ML Service",
+    )
     max_age_seconds: Optional[int] = Field(
         default=None,
         description="If provided, reuse the latest generated payload when it is fresher than this age.",
