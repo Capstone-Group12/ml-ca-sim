@@ -10,17 +10,15 @@ class port_probe:
     TARGET = "192.168.50.253"
     DEFAULT_COMMON_PORTS = list(range(0, 10001))
 
-    def __init__(self, ports=None, concurrency=200, timeout=1.5,
-                 banner=False, send_probe=False, delay_between_starts=0.0,
-                 out_prefix="local_scan", use_default_common=True):
-        self.ports = DEFAULT_COMMON_PORTS
-        self.concurrency = concurrency
-        self.timeout = timeout
-        self.banner = banner
-        self.send_probe = send_probe
-        self.delay = delay_between_starts
-        self.out_prefix = out_prefix
-        self.use_default_common = use_default_common
+    def __init__(self):
+        self.ports = list(range(0,10001))
+        self.concurrency = 200
+        self.timeout = 1.5
+        self.banner =True
+        self.send_probe = True
+        self.delay = 0.0
+        self.out_prefix = "local_scan"
+        self.use_default_common = True
 
     @staticmethod
     def parse_ports(ports_spec: str) -> List[int]:
@@ -165,12 +163,6 @@ class port_probe:
 
 
 
-scanner = port_probe(
-    ports=None,
-    concurrency=200,
-    timeout=1,
-    banner=True,
-    send_probe=True
-)
+scanner = port_probe()
 
 scanner.run()
