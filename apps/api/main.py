@@ -203,7 +203,7 @@ async def _execute_port_probing(timeout_s: float = 200.0, param: int = 100) -> P
     cmd = [
         sys.executable,
         str(script),
-        param,
+        str(param),
         "--use-default-common",
         "--out-prefix",
         str(prefix),
