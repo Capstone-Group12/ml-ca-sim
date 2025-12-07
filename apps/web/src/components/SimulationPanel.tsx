@@ -69,7 +69,7 @@ export default function SimulationPanel() {
   const [error, setError] = React.useState<string | null>(null);
   const [expandedPayload, setExpandedPayload] = React.useState<Set<number>>(new Set());
   const [expandedResponse, setExpandedResponse] = React.useState<Set<number>>(new Set());
-  const [requestCount, setRequestCount] = React.useState<number>(1);
+  const [requestCount, setRequestCount] = React.useState<number>(100);
   const [running, setRunning] = React.useState(false);
 
   const activeAttack = SUPPORTED_ATTACKS[attackType];
@@ -191,9 +191,9 @@ export default function SimulationPanel() {
             disabled={running}
             className="w-40 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-white shadow-inner focus:border-white focus:outline-none focus:ring-1 focus:ring-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <option value={1}>1 request</option>
-            <option value={10}>10 requests</option>
-            <option value={20}>20 requests</option>
+            <option value={100}>100 requests</option>
+            <option value={1000}>1k requests</option>
+            <option value={10000}>10k requests</option>
           </select>
         </div>
 
