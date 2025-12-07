@@ -6,7 +6,7 @@ import sampleScan from "../data/port_probe_fallback.json";
 
 const SUPPORTED_ATTACKS: Record<
   AttackType,
-  { runName: string; getSample: () => ScanRow[] }
+  { runName: string; getSample: () => ScanRow[], requestCount?: number }
 > = {
   "Port Probing": {
     runName: "Port Probing",
@@ -15,6 +15,7 @@ const SUPPORTED_ATTACKS: Record<
         ...row,
         banner: row.banner || "Port Probing simulated",
       })),
+    requestCount: 100,
   },
   DOS: {
     runName: "DOS",
@@ -80,7 +81,7 @@ export default function SimulationPanel() {
       const runResp = await fetch(`${API_BASE_URL}/run-attack`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attack: activeAttack?.runName || "Port Probing", max_age_seconds: 300 }),
+        body: JSON.stringify({ attack: activeAttack?.runName || "Port Probing", requstCount: requestCount, max_age_seconds: 300 }),
       });
       if (!runResp.ok) {
         throw new Error(`run-attack responded with ${runResp.status}`);
@@ -98,7 +99,7 @@ export default function SimulationPanel() {
       throw new Error("No payload rows available to send");
     }
     return fallback;
-  }, [activeAttack]);
+  }, [activeAttack, requestCount]);
 
   const runSimulation = async () => {
     if (!isSupported) {
