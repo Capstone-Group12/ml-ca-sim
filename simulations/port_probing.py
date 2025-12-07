@@ -105,8 +105,7 @@ class port_probe:
 
     def write_outputs(self, results):
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        json_path = f"{self.out_prefix}_{ts}.json"
-        csv_path = f"{self.out_prefix}_{ts}.csv"
+        json_path = f"simulations/generated_payloads/{self.out_prefix}_{ts}.json"
 
         rows = [{
             "timestamp": datetime.now().isoformat(),
@@ -119,12 +118,7 @@ class port_probe:
         with open(json_path, "w", encoding="utf-8") as jf:
             json.dump(rows, jf, indent=2, ensure_ascii=False)
 
-        with open(csv_path, "w", newline="", encoding="utf-8") as cf:
-            writer = csv.DictWriter(cf, fieldnames=["timestamp", "target", "port", "state", "banner"])
-            writer.writeheader()
-            writer.writerows(rows)
-
-        return json_path, csv_path
+        return json_path
 
     @staticmethod
     def print_summary(results):
@@ -159,7 +153,7 @@ class port_probe:
         results = loop.run_until_complete(self.perform_scan())
         self.print_summary(results)
         paths = self.write_outputs(results)
-        print(f"\nResults written to: {paths[0]} and {paths[1]}")
+        print(f"\nResults written to: {paths}")
 
 
 
