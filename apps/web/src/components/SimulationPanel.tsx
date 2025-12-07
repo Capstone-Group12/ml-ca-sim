@@ -42,9 +42,13 @@ type ScanRow = {
   banner: string;
 };
 
+type ScanBruteForceRow = {
+  timestamp: string;
+};
+
 type ScenarioResult = {
   requestId: number;
-  payload: ScanRow[];
+  payload: ScanRow[] | ScanBruteForceRow[];
   response: unknown;
   verdict: boolean;
   confidence: number | null;
@@ -73,9 +77,9 @@ export default function SimulationPanel() {
   const [running, setRunning] = React.useState(false);
 
   const activeAttack = SUPPORTED_ATTACKS[attackType];
-  const isSupported = Boolean(activeAttack && activeAttack.runName === "Port Probing");
+  const isSupported = Boolean(activeAttack && (activeAttack.runName === "Port Probing") || (activeAttack.runName === "Brute Force"));
 
-  const fetchPayloadRows = React.useCallback(async (): Promise<ScanRow[]> => {
+  const fetchPayloadRows = React.useCallback(async (): Promise<ScanRow[] | ScanBruteForceRow[]> => {
     try {
       const runResp = await fetch(`${API_BASE_URL}/run-attack`, {
         method: "POST",
@@ -88,7 +92,7 @@ export default function SimulationPanel() {
       const runBody = await runResp.json();
       const candidate = Array.isArray(runBody?.payload) ? runBody.payload : null;
       if (candidate && candidate.length) {
-        return candidate as ScanRow[];
+        return candidate as ScanRow[] | ScanBruteForceRow[];
       }
     } catch (err) {
       console.error("run-attack failed, falling back to local payload:", err);
@@ -113,7 +117,7 @@ export default function SimulationPanel() {
     setExpandedPayload(new Set());
     setExpandedResponse(new Set());
 
-    let payloadRows: ScanRow[];
+    let payloadRows: ScanRow[] | ScanBruteForceRow[];
     try {
       payloadRows = await fetchPayloadRows();
     } catch (err) {
