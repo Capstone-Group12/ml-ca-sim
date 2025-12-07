@@ -132,7 +132,7 @@ async def predict(attack: Attack):
 
 class RunAttackRequest(BaseModel):
     attack: str = Field(..., description="Attack name, only 'Port Probing' is supported")
-    requestCount: number = Field(
+    requestCount: Optional[int] = Field(
         default=100,
         description="The number of packets sent to the ML Service",
     )
