@@ -183,7 +183,7 @@ async def _predict_batch(payloads: Sequence[dict]) -> List[dict]:
             results.append({"input": payload, "error": exc.detail})
     return results
 
-async def _execute_port_probing(timeout_s: float = 12.0, param) -> Path:
+async def _execute_port_probing(timeout_s: float = 200.0, param) -> Path:
     """
     Run the port probing simulation script and return once the process finishes.
     Raises TimeoutError on timeout and RuntimeError on non-zero exit.
