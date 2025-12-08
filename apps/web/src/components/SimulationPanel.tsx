@@ -205,9 +205,9 @@ export default function SimulationPanel() {
           >
             {attackType === "DOS" ? (
               <>
-                <option value={100}>100 requests</option>
-                <option value={500}>500 requests</option>
                 <option value={1000}>1k requests</option>
+                <option value={5000}>5k requests</option>
+                <option value={10000}>10k requests</option>
               </>
             ) : (
               <>

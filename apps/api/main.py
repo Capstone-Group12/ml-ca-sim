@@ -408,7 +408,7 @@ async def _run_dos_attack(request_count: int) -> dict:
                 "total_fwd_packet": 700 + (burst_factor * 25),
                 "flow_duration": 750000 + (burst_factor * 500),
                 "total_length_of_fwd_packet": 5000000 + (burst_factor * 50000),
-                "src_ip": f"10.0.0.{(idx % 240) + 1}",
+                "src_ip": f"10.0.0.98",
                 "dst_ip": "192.168.50.253",
             }
         )
