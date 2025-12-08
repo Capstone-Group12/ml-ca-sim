@@ -20,5 +20,3 @@ class dos_attack:
     def run(self, workers=200):                      # In parallel send requests in range i
         with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = [executor.submit(self.send_request) for _ in range(self.i)]
-            for future in as_completed(futures):
-                print(future.result())
