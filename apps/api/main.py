@@ -402,14 +402,14 @@ async def _run_dos_attack(request_count: int) -> dict:
         burst_factor = 1 + (idx % 10)
         ml_payloads.append(
             {
-                "Dst Port": 80,
-                "Flow Packets/s": 800 + (burst_factor * 50),
-                "Flow Bytes/s": 6000000 + (burst_factor * 250000),
-                "Total Fwd Packet": 700 + (burst_factor * 25),
-                "Flow Duration": 750000 + (burst_factor * 500),
-                "Total Length of Fwd Packet": 5000000 + (burst_factor * 50000),
-                "Src IP": f"10.0.0.{(idx % 240) + 1}",
-                "Dst IP": "192.168.50.253",
+                "dst_port": 80,
+                "flow_packets_s": 800 + (burst_factor * 50),
+                "flow_bytes_s": 6000000 + (burst_factor * 250000),
+                "total_fwd_packet": 700 + (burst_factor * 25),
+                "flow_duration": 750000 + (burst_factor * 500),
+                "total_length_of_fwd_packet": 5000000 + (burst_factor * 50000),
+                "src_ip": f"10.0.0.{(idx % 240) + 1}",
+                "dst_ip": "192.168.50.253",
             }
         )
 
