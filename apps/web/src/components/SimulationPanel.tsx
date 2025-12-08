@@ -36,11 +36,14 @@ const SUPPORTED_ATTACKS: Record<
 };
 
 type ScanRow = {
-  timestamp: string;
-  target: string;
-  port: number;
-  state: string;
-  banner: string;
+  timestamp?: string;
+  target?: string;
+  port?: number;
+  state?: string;
+  banner?: string;
+  dst_port?: number;
+  src_ip?: string;
+  dst_ip?: string;
 };
 
 type ScenarioResult = {
@@ -51,6 +54,19 @@ type ScenarioResult = {
   confidence: number | null;
   message?: string;
   error?: string;
+};
+
+type MLResultEntry = {
+  input?: ScanRow;
+  ml?: {
+    is_port_probe?: boolean;
+    is_dos?: boolean;
+    confidence?: number;
+  };
+  error?: string;
+  average_confidence?: number;
+  note?: string;
+  target?: string;
 };
 
 const API_BASE_URL =
@@ -74,40 +90,11 @@ export default function SimulationPanel() {
   const [running, setRunning] = React.useState(false);
 
   const activeAttack = SUPPORTED_ATTACKS[attackType];
-  const isSupported = Boolean(activeAttack && activeAttack.runName === "Port Probing");
-
-  const fetchPayloadRows = React.useCallback(async (): Promise<ScanRow[]> => {
-    try {
-      const runResp = await fetch(`${API_BASE_URL}/run-attack`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          attack: activeAttack?.runName || "Port Probing",
-          requestCount,
-          max_age_seconds: 300,
-        }),
-      });
-      if (!runResp.ok) {
-        throw new Error(`run-attack responded with ${runResp.status}`);
-      }
-      const runBody = await runResp.json();
-      const candidate = Array.isArray(runBody?.payload) ? runBody.payload : null;
-      if (candidate && candidate.length) {
-        return candidate as ScanRow[];
-      }
-    } catch (err) {
-      console.error("run-attack failed, falling back to local payload:", err);
-    }
-    const fallback = activeAttack?.getSample() || [];
-    if (!fallback.length) {
-      throw new Error("No payload rows available to send");
-    }
-    return fallback;
-  }, [activeAttack, requestCount]);
+  const isSupported = attackType === "Port Probing" || attackType === "DOS";
 
   const runSimulation = async () => {
     if (!isSupported) {
-      setError("Not yet implemented: only Port Probing is available from bundled simulations.");
+      setError("Not yet implemented: only Port Probing and DOS are available from bundled simulations.");
       return;
     }
 
@@ -118,63 +105,83 @@ export default function SimulationPanel() {
     setExpandedPayload(new Set());
     setExpandedResponse(new Set());
 
-    let payloadRows: ScanRow[];
     try {
-      payloadRows = await fetchPayloadRows();
-    } catch (err) {
-      setRunning(false);
-      setError(err instanceof Error ? err.message : "Failed to load payload");
-      setStatusMessage(null);
-      return;
-    }
-
-    const results: ScenarioResult[] = [];
-    for (let i = 0; i < requestCount; i += 1) {
-      try {
-        const filteredPayload = [payloadRows[i % payloadRows.length]];
-        const predictResp = await fetch(`${API_BASE_URL}/predict-from-scan-json`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(filteredPayload),
-        });
-        if (!predictResp.ok) {
-          throw new Error(`predict-from-scan-json responded with ${predictResp.status}`);
-        }
-        const body = await predictResp.json();
-        const resultsArray = Array.isArray(body?.results) ? body.results : [];
-        const firstResult = resultsArray[0] ?? null;
-
-        const ml = firstResult?.ml as
-          | { is_port_probe?: boolean; confidence?: number }
-          | undefined;
-
-        const verdict = Boolean(ml?.is_port_probe);
-        const confidence = typeof ml?.confidence === "number" ? ml.confidence : null;
-
-        const res: ScenarioResult = {
-          requestId: i + 1,
-          payload: filteredPayload,
-          response: firstResult ?? body,
-          verdict,
-          confidence,
-          message: firstResult?.error,
-        };
-        results.push({ ...res, requestId: i + 1 });
-      } catch (err) {
-        console.error("simulation request failed:", err);
-        results.push({
-          requestId: i + 1,
-          payload: [payloadRows[i % payloadRows.length]],
-          response: null,
-          verdict: false,
-          confidence: null,
-          error: err instanceof Error ? err.message : "Request failed",
-        });
+      const runResp = await fetch(`${API_BASE_URL}/run-attack`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          attack: activeAttack?.runName || "Port Probing",
+          requestCount,
+          max_age_seconds: attackType === "Port Probing" ? 300 : undefined,
+        }),
+      });
+      if (!runResp.ok) {
+        throw new Error(`run-attack responded with ${runResp.status}`);
       }
+      const body = await runResp.json();
+      const resultsArray: MLResultEntry[] = Array.isArray(body?.results)
+        ? (body.results as MLResultEntry[])
+        : [];
+
+      let results: ScenarioResult[] = [];
+      if (attackType === "DOS") {
+        const avgConf =
+          typeof body?.average_confidence === "number" ? body.average_confidence : null;
+        const payload = Array.isArray(body?.payload) ? (body.payload as ScanRow[]) : [];
+        const response = {
+          average_confidence: avgConf,
+          note: body?.note,
+          target: body?.target,
+        };
+        results = [
+          {
+            requestId: 1,
+            payload: payload,
+            response,
+            verdict: avgConf !== null ? avgConf >= 0.5 : false,
+            confidence: avgConf,
+            message: body?.note,
+          },
+        ];
+      } else {
+        const payload = Array.isArray(body?.payload) ? (body.payload as ScanRow[]) : [];
+        const confidences = resultsArray
+          .map((entry) => (typeof entry?.ml?.confidence === "number" ? entry.ml.confidence : null))
+          .filter((n): n is number => n !== null);
+        const avgConf =
+          confidences.length > 0
+            ? confidences.reduce((acc, n) => acc + n, 0) / confidences.length
+            : null;
+        const positives = resultsArray.filter((entry) => entry?.ml?.is_port_probe).length;
+        const verdict =
+          avgConf !== null ? avgConf >= 0.5 : positives > resultsArray.length / 2;
+        const firstError = resultsArray.find((entry) => entry?.error)?.error;
+
+        results = [
+          {
+            requestId: 1,
+            payload,
+            response: {
+              average_confidence: avgConf,
+              positives,
+              total: resultsArray.length,
+            },
+            verdict,
+            confidence: avgConf,
+            message: firstError,
+            error: firstError,
+          },
+        ];
+      }
+
+      setScenarios(results);
+      setStatusMessage(null);
+    } catch (err) {
+      console.error("simulation request failed:", err);
+      setError(err instanceof Error ? err.message : "Request failed");
+      setStatusMessage(null);
     }
 
-    setScenarios(results);
-    setStatusMessage(null);
     setRunning(false);
   };
 
@@ -196,9 +203,19 @@ export default function SimulationPanel() {
             disabled={running}
             className="w-40 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-white shadow-inner focus:border-white focus:outline-none focus:ring-1 focus:ring-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <option value={100}>100 requests</option>
-            <option value={1000}>1k requests</option>
-            <option value={5000}>5k requests</option>
+            {attackType === "DOS" ? (
+              <>
+                <option value={100}>100 requests</option>
+                <option value={500}>500 requests</option>
+                <option value={1000}>1k requests</option>
+              </>
+            ) : (
+              <>
+                <option value={100}>100 requests</option>
+                <option value={1000}>1k requests</option>
+                <option value={5000}>5k requests</option>
+              </>
+            )}
           </select>
         </div>
 
@@ -213,7 +230,7 @@ export default function SimulationPanel() {
 
       {!isSupported && (
         <div className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Not yet implemented: only Port Probing can be triggered from available simulations.
+          Not yet implemented: only Port Probing and DOS can be triggered from available simulations.
         </div>
       )}
 

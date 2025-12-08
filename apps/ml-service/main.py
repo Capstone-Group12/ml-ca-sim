@@ -10,6 +10,11 @@ from starlette.responses import Response
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from pydantic import BaseModel, Field
 
+from dos import (
+    DETECTION_FEATURES as DOS_FEATURES,
+    predict_dos,
+    train_dos_model,
+)
 from port_probing import (
     DETECTION_FEATURES,
     predict_port_probing,
@@ -20,16 +25,30 @@ from port_probing import (
 async def lifespan(app: FastAPI):
     app.state.model = None
     app.state.model_metrics = None
+    app.state.dos_model = None
+    app.state.dos_model_metrics = None
     app.state.startup_error = None
+    app.state.startup_errors = {}
     try:
         app.state.model, app.state.model_metrics = train_port_probing_model()
         logger.info("ML model loaded successfully with metrics: %s", app.state.model_metrics)
     except FileNotFoundError as exc:
         app.state.startup_error = str(exc)
+        app.state.startup_errors["port_probing"] = str(exc)
         logger.error("Model file not found: %s", exc)
     except Exception as exc:
         app.state.startup_error = f"Failed to load model: {exc}"
+        app.state.startup_errors["port_probing"] = str(exc)
         logger.error("Model load failed: %s", exc)
+    try:
+        app.state.dos_model, app.state.dos_model_metrics = train_dos_model()
+        logger.info("DoS ML model loaded successfully with metrics: %s", app.state.dos_model_metrics)
+    except FileNotFoundError as exc:
+        app.state.startup_errors["dos"] = str(exc)
+        logger.error("DoS model file not found: %s", exc)
+    except Exception as exc:
+        app.state.startup_errors["dos"] = f"Failed to load model: {exc}"
+        logger.error("DoS model load failed: %s", exc)
     yield
 
 app = FastAPI(
@@ -71,6 +90,21 @@ class PredictionResponse(BaseModel):
     confidence: Optional[float] = None
     model_metrics: Optional[dict] = None
 
+class DoSSample(BaseModel):
+    dst_port: int = Field(..., ge=0, le=65535, description="Destination port")
+    flow_packets_s: float = Field(..., ge=0, description="Packets per second")
+    flow_bytes_s: float = Field(..., ge=0, description="Bytes per second")
+    total_fwd_packet: int = Field(..., ge=0, description="Packets in the forward flow")
+    flow_duration: float = Field(..., ge=0, description="Flow duration (microseconds)")
+    total_length_of_fwd_packet: float = Field(..., ge=0, description="Total forward packet length")
+    src_ip: str = Field(..., description="Source IP address")
+    dst_ip: str = Field(..., description="Destination IP address")
+
+class DoSPredictionResponse(BaseModel):
+    is_dos: bool
+    confidence: Optional[float] = None
+    model_metrics: Optional[dict] = None
+
 @app.get("/")
 @app.get("/ml")
 @app.get("/ml/")
@@ -78,6 +112,7 @@ def index() -> Dict[str, str]:
     return {
         "message": "ML service is running",
         "predict_endpoint": "/ml/predict",
+        "dos_predict_endpoint": "/ml/dos/predict",
         "health_endpoint": "/ml/health",
         "metrics_endpoint": "/ml/metrics",
     }
@@ -89,9 +124,16 @@ def health() -> Dict[str, object]:
     REQUEST_LATENCY.labels(path="/health", method="GET").observe(0.0)
     return {
         "status": "ok",
-        "model_ready": app.state.model is not None,
-        "startup_error": app.state.startup_error,
-        "features": DETECTION_FEATURES,
+        "port_probing": {
+            "model_ready": app.state.model is not None,
+            "startup_error": app.state.startup_errors.get("port_probing"),
+            "features": DETECTION_FEATURES,
+        },
+        "dos": {
+            "model_ready": app.state.dos_model is not None,
+            "startup_error": app.state.startup_errors.get("dos"),
+            "features": DOS_FEATURES,
+        },
     }
 
 @app.get("/metrics")
@@ -112,7 +154,7 @@ def predict(sample: TrafficSample) -> PredictionResponse:
             or "Model not yet available for inference",
         )
 
-    normalized_sample = _normalize_sample(sample)
+    normalized_sample = _normalize_port_sample(sample)
 
     try:
         label, confidence = predict_port_probing(
@@ -137,11 +179,60 @@ def predict(sample: TrafficSample) -> PredictionResponse:
         model_metrics=app.state.model_metrics,
     )
 
-def _normalize_sample(sample: TrafficSample) -> Dict[str, float]:
+@app.post("/dos/predict", response_model=DoSPredictionResponse)
+@app.post("/ml/dos/predict", response_model=DoSPredictionResponse)
+def predict_dos_attack(sample: DoSSample) -> DoSPredictionResponse:
+    start = time.perf_counter()
+    path = "/dos/predict"
+    method = "POST"
+    if app.state.dos_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail=app.state.startup_errors.get("dos")
+            or "DoS model not yet available for inference",
+        )
+
+    normalized_sample = _normalize_dos_sample(sample)
+
+    try:
+        label, confidence = predict_dos(app.state.dos_model, normalized_sample)
+    except Exception as exc:
+        REQUEST_COUNT.labels(path=path, method=method, status=500).inc()
+        raise HTTPException(status_code=500, detail=f"Failed to run DoS inference: {exc}")
+
+    duration = time.perf_counter() - start
+    REQUEST_COUNT.labels(path=path, method=method, status=200).inc()
+    REQUEST_LATENCY.labels(path=path, method=method).observe(duration)
+    logger.info(
+        "dos predict completed status=200 duration_ms=%.2f confidence=%s",
+        duration * 1000,
+        confidence,
+    )
+
+    return DoSPredictionResponse(
+        is_dos=bool(label),
+        confidence=confidence,
+        model_metrics=app.state.dos_model_metrics,
+    )
+
+def _normalize_port_sample(sample: TrafficSample) -> Dict[str, float]:
     payload = sample.model_dump()
     payload["l4_tcp"] = int(payload["l4_tcp"])
     payload["l4_udp"] = int(payload["l4_udp"])
     return payload
+
+def _normalize_dos_sample(sample: DoSSample) -> Dict[str, object]:
+    data = sample.model_dump()
+    return {
+        "Dst Port": data["dst_port"],
+        "Flow Packets/s": data["flow_packets_s"],
+        "Flow Bytes/s": data["flow_bytes_s"],
+        "Total Fwd Packet": data["total_fwd_packet"],
+        "Flow Duration": data["flow_duration"],
+        "Total Length of Fwd Packet": data["total_length_of_fwd_packet"],
+        "Src IP": data["src_ip"],
+        "Dst IP": data["dst_ip"],
+    }
 
 if __name__ == "__main__":
     import uvicorn
