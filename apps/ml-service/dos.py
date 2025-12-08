@@ -85,9 +85,9 @@ def find_dos(df: pd.DataFrame) -> pd.DataFrame:
 
     # 4 obvious signs of dos attacks
     #   -> http port access (i.e., port 80/443)
-    #   -> very high packet rates (flooding, > 100 packets/s)
-    #   -> very large byte rates (bandwidth flood, > ~5 Mbps)
-    #   -> request flood in 1 flow (> 1000 packets)
+    #   -> very high packet rates (flooding, > 25 packets/s)
+    #   -> very large byte rates (bandwidth flood)
+    #   -> request flood in 1 flow (> 500 packets)
     rule_score = (
         df["Dst Port"].isin([80, 443, 8080, 8443]).astype(int) * 25
         + (df["Flow Packets/s"] > 25).astype(int) * 25
@@ -100,7 +100,7 @@ def find_dos(df: pd.DataFrame) -> pd.DataFrame:
     #   -> plus this is a lot faster than calculating z-score for 900k rows
     extreme_vals_score = (
         (df["Flow Packets/s"] > 75).astype(int) * 30            # super high packet rate!
-        + (df["Flow Bytes/s"] > 50000000).astype(int) * 30      # super high bandwidth!
+        + (df["Flow Bytes/s"] > 1000).astype(int) * 30          # super high bandwidth!
     )
 
     # now, we check if a single source is very active, with large volumes of traffic
@@ -112,11 +112,10 @@ def find_dos(df: pd.DataFrame) -> pd.DataFrame:
         # Estimated total packets = count * average
         estimated_totals = ip_counts * avg_packets
 
-        # Map back to dataframe
         df["estimated_source_total"] = df["Src IP"].map(estimated_totals).fillna(0)
 
-        # Single source sending >10000 estimated packets = DoS
-        source_intensity_score = np.where(df["estimated_source_total"] > 10000, 30, 0)
+        # Single source sending >100 estimated packets = DoS
+        source_intensity_score = np.where(df["estimated_source_total"] > 100, 30, 0)
 
 
     # now, we look for patterns within the http requests and the flow
@@ -129,7 +128,7 @@ def find_dos(df: pd.DataFrame) -> pd.DataFrame:
     if "Total Length of Fwd Packet" in df.columns:
         post_flood = (
             df["Dst Port"].isin([80, 443, 8080, 8443])
-            & (df["Total Length of Fwd Packet"] > 5000000)    # 5MB+ uploads
+            & (df["Total Length of Fwd Packet"] > 50000)
         )
         http_pattern_score += np.where(post_flood, 20, 0)
 
@@ -137,7 +136,7 @@ def find_dos(df: pd.DataFrame) -> pd.DataFrame:
     if all(col in df.columns for col in ["Flow Duration", "Total Fwd Packet"]):
         request_flood = (
             df["Dst Port"].isin([80, 443, 8080, 8443])
-            & (df["Flow Duration"] < 1000000)
+            & (df["Flow Duration"] < 50000)
             & (df["Total Fwd Packet"] > 100)                # so, so, so many requests!!
             & (df["Flow Packets/s"] > 50)
         )
