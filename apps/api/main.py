@@ -459,8 +459,8 @@ async def _run_brute_force_attack(request_count: int) -> dict:
         note = "Brute force simulation timed out."
         logger.warning(note)
     except Exception as exc:
-        note = f"Brute force simulation failed: {exc}"
-        logger.error(note)
+        note = "Brute force simulation failed."
+        logger.exception("Error in brute force simulation")
 
     if not BRUTE_FORCE_STORE:
         raise HTTPException(
