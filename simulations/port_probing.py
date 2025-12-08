@@ -20,24 +20,6 @@ class port_probe:
         self.out_prefix = "local_scan"
         self.use_default_common = False
 
-    @staticmethod
-    def parse_ports(ports_spec: str) -> List[int]:
-        out = set()
-        parts = [p.strip() for p in ports_spec.split(",") if p.strip()]
-        for p in parts:
-            if "-" in p:
-                lo, hi = p.split("-", 1)
-                lo, hi = int(lo), int(hi)
-                if lo < 1 or hi > 65535 or lo > hi:
-                    raise ValueError(f"Invalid range: {p}")
-                out.update(range(lo, hi + 1))
-            else:
-                port = int(p)
-                if port < 1 or port > 65535:
-                    raise ValueError(f"Invalid port: {p}")
-                out.add(port)
-        return sorted(out)
-
     async def try_connect(self, port: int, semaphore: asyncio.Semaphore,
                           start_delay: float) -> Tuple[int, str, str]:
         if start_delay:
@@ -139,15 +121,7 @@ class port_probe:
                 if s == "open" and b:
                     print(f" - {p}: {b[:200]}")
 
-    def resolve_ports(self):
-        if self.use_default_common or not self.ports:
-            self.ports = sorted(set(self.DEFAULT_COMMON_PORTS))
-        else:
-            self.ports = self.parse_ports(self.ports)
-
     def run(self):
-        self.resolve_ports()
-
         print(f"Starting local scan of {len(self.ports)} ports on {self.TARGET}")
         loop = asyncio.get_event_loop()
         results = loop.run_until_complete(self.perform_scan())
