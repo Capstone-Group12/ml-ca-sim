@@ -1,6 +1,7 @@
 pandas
 scikit-learn
 xgboost==2.0.3
+scipy
 fastapi
 uvicorn[standard]
 prometheus-client

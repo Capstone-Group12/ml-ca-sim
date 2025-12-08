@@ -42,6 +42,11 @@ type ScanRow = {
   state?: string;
   banner?: string;
   dst_port?: number;
+  flow_packets_s?: number;
+  flow_duration?: number;
+  total_fwd_packet?: number;
+  syn_flag_count?: number;
+  ack_flag_count?: number;
   src_ip?: string;
   dst_ip?: string;
 };
@@ -61,6 +66,7 @@ type MLResultEntry = {
   ml?: {
     is_port_probe?: boolean;
     is_dos?: boolean;
+    is_bruteforce?: boolean;
     confidence?: number;
   };
   error?: string;
@@ -90,11 +96,14 @@ export default function SimulationPanel() {
   const [running, setRunning] = React.useState(false);
 
   const activeAttack = SUPPORTED_ATTACKS[attackType];
-  const isSupported = attackType === "Port Probing" || attackType === "DOS";
+  const isSupported =
+    attackType === "Port Probing" || attackType === "DOS" || attackType === "Brute Force";
 
   const runSimulation = async () => {
     if (!isSupported) {
-      setError("Not yet implemented: only Port Probing and DOS are available from bundled simulations.");
+      setError(
+        "Not yet implemented: only Port Probing, Brute Force, and DOS are available from bundled simulations.",
+      );
       return;
     }
 
@@ -141,6 +150,34 @@ export default function SimulationPanel() {
             verdict: avgConf !== null ? avgConf >= 0.5 : false,
             confidence: avgConf,
             message: body?.note && body.note !== "DoS simulation completed." ? body.note : undefined,
+          },
+        ];
+      } else if (attackType === "Brute Force") {
+        const payload = Array.isArray(body?.payload) ? (body.payload as ScanRow[]) : [];
+        const avgConf =
+          typeof body?.average_confidence === "number" ? body.average_confidence : null;
+        const positivesCount =
+          typeof body?.positives === "number"
+            ? Number(body.positives)
+            : resultsArray.filter((entry) => entry?.ml?.is_bruteforce).length;
+        const verdict =
+          avgConf !== null ? avgConf >= 0.5 : positivesCount > resultsArray.length / 2;
+        const firstError = resultsArray.find((entry) => entry?.error)?.error;
+
+        results = [
+          {
+            requestId: 1,
+            payload,
+            response: {
+              average_confidence: avgConf,
+              positives: positivesCount,
+              total: resultsArray.length,
+              note: body?.note,
+            },
+            verdict,
+            confidence: avgConf,
+            message: firstError || body?.note,
+            error: firstError,
           },
         ];
       } else {
@@ -230,7 +267,8 @@ export default function SimulationPanel() {
 
       {!isSupported && (
         <div className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Not yet implemented: only Port Probing and DOS can be triggered from available simulations.
+          Not yet implemented: only Port Probing, Brute Force, and DOS can be triggered from available
+          simulations.
         </div>
       )}
 

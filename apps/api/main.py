@@ -23,6 +23,7 @@ from models import Attack, AttackType, MLModel, ScanCSV, ScanRow
 
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://capstone-ml:8001/predict")
 ML_SERVICE_DOS_URL = os.getenv("ML_SERVICE_DOS_URL", "http://capstone-ml:8001/dos/predict")
+ML_SERVICE_BRUTE_URL = os.getenv("ML_SERVICE_BRUTE_URL", "http://capstone-ml:8001/bruteforce/predict")
 DOS_TARGET_URL = "https://mlcasim-api.edwardnafornita.com/output-json"
 FRONTEND_ORIGINS = [
     "http://localhost:3000",
@@ -53,6 +54,7 @@ REQUEST_LATENCY = Histogram(
 )
 
 DOS_STORE: List[dict] = []
+BRUTE_FORCE_STORE: List[dict] = []
 
 app = FastAPI(title="Attack API")
 app.add_middleware(
@@ -138,7 +140,7 @@ async def predict(attack: Attack):
     return {"attack": payload, "mlResult": result}
 
 class RunAttackRequest(BaseModel):
-    attack: str = Field(..., description="Attack name, supports 'Port Probing' and 'DOS'")
+    attack: str = Field(..., description="Attack name, supports 'Port Probing', 'Brute Force', and 'DOS'")
     requestCount: Optional[int] = Field(
         default=100,
         description="The number of packets sent to the ML Service",
@@ -164,6 +166,18 @@ def _row_to_ml_payload(row: ScanRow, prev_ts: Optional[datetime]) -> dict:
         "stream_1_count": 1,
         "l4_tcp": True,
         "l4_udp": False,
+    }
+
+def _normalize_bruteforce_payload(payload: dict) -> dict:
+    return {
+        "dst_port": int(payload.get("dst_port", 0)),
+        "flow_packets_s": float(payload.get("flow_packets_s", 0.0)),
+        "flow_duration": float(payload.get("flow_duration", 0.0)),
+        "total_fwd_packet": int(payload.get("total_fwd_packet", 0)),
+        "syn_flag_count": int(payload.get("syn_flag_count", 0)),
+        "ack_flag_count": int(payload.get("ack_flag_count", 0)),
+        "src_ip": str(payload.get("src_ip", "0.0.0.0")),
+        "dst_ip": str(payload.get("dst_ip", "0.0.0.0")),
     }
 
 async def _post_to_ml(payload: dict, ml_url: str = ML_SERVICE_URL) -> dict:
@@ -282,6 +296,56 @@ async def _execute_dos_simulation(target_url: str, count: int, timeout_s: float 
 
     return stdout.decode(), stderr.decode()
 
+async def _execute_bruteforce_simulation(attempts: int, timeout_s: float = 200.0) -> List[dict]:
+    script = SIMULATIONS_DIR / "brute_force.py"
+    if not script.exists():
+        raise RuntimeError(f"Brute force simulation script not found at {script}")
+
+    out_path = GENERATED_DIR / f"brute_force_{int(time.time())}.json"
+    cmd = [
+        sys.executable,
+        str(script),
+        str(attempts),
+        "--out-file",
+        str(out_path),
+    ]
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        cwd=str(SIMULATIONS_DIR.parent),
+    )
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout_s)
+    except asyncio.TimeoutError as exc:
+        proc.kill()
+        await proc.communicate()
+        raise TimeoutError("Brute force simulation timed out") from exc
+
+    if proc.returncode != 0:
+        err = stderr.decode().strip() or stdout.decode().strip() or "unknown error"
+        raise RuntimeError(f"Brute force simulation failed: {err}")
+
+    payloads: List[dict] = []
+    raw_output = stdout.decode().strip()
+    if raw_output:
+        try:
+            payloads = json.loads(raw_output)
+        except json.JSONDecodeError:
+            pass
+
+    if not payloads and out_path.exists():
+        try:
+            with out_path.open("r", encoding="utf-8") as f:
+                payloads = json.load(f)
+        except Exception:
+            payloads = []
+
+    if not payloads:
+        raise RuntimeError("Brute force simulation produced no payloads")
+
+    return payloads
+
 @app.post("/predict-from-scan-json")
 @app.post("/api/predict-from-scan-json")
 async def predict_from_scan_json(raw: List[dict]):
@@ -313,9 +377,11 @@ async def run_attack(body: RunAttackRequest):
     request_count = int(body.requestCount or 0)
     if attack in ("port probing", "port_probing", "port-probing", "portprobing"):
         return await _run_port_probing(request_count, body.max_age_seconds)
+    if attack in ("brute force", "bruteforce", "brute_force"):
+        return await _run_brute_force_attack(request_count)
     if attack in ("dos", "ddos", "dos attack", "denial of service"):
         return await _run_dos_attack(request_count)
-    raise HTTPException(status_code=400, detail="Attack not implemented; supported: Port Probing, DOS.")
+    raise HTTPException(status_code=400, detail="Attack not implemented; supported: Port Probing, Brute Force, DOS.")
 
 async def _run_port_probing(requestCount: int, max_age: Optional[int]) -> dict:
     requestCount = max(requestCount, 1)
@@ -379,6 +445,52 @@ async def _run_port_probing(requestCount: int, max_age: Optional[int]) -> dict:
         exec_error or "",
     )
     return response
+
+async def _run_brute_force_attack(request_count: int) -> dict:
+    request_count = max(request_count, 1)
+    BRUTE_FORCE_STORE.clear()
+    note = ""
+
+    try:
+        payloads = await _execute_bruteforce_simulation(request_count)
+        BRUTE_FORCE_STORE.extend(payloads[:request_count])
+        logger.info("brute force simulation executed successfully count=%d", len(BRUTE_FORCE_STORE))
+    except TimeoutError:
+        note = "Brute force simulation timed out."
+        logger.warning(note)
+    except Exception as exc:
+        note = f"Brute force simulation failed: {exc}"
+        logger.error(note)
+
+    if not BRUTE_FORCE_STORE:
+        raise HTTPException(
+            status_code=500,
+            detail="Brute force simulation produced no payloads.",
+        )
+
+    ml_payloads = [_normalize_bruteforce_payload(p) for p in BRUTE_FORCE_STORE[:request_count]]
+    results = await _predict_batch(ml_payloads, ml_url=ML_SERVICE_BRUTE_URL)
+    confidences = []
+    positives = 0
+    for r in results:
+        ml = r.get("ml") or {}
+        conf = ml.get("confidence")
+        if isinstance(conf, (int, float)):
+            confidences.append(float(conf))
+        if ml.get("is_bruteforce"):
+            positives += 1
+    avg_conf = sum(confidences) / len(confidences) if confidences else None
+
+    BRUTE_FORCE_STORE.clear()
+    return {
+        "source": "simulation",
+        "count": request_count,
+        "payload": ml_payloads,
+        "results": results,
+        "average_confidence": avg_conf,
+        "positives": positives,
+        "note": note or "Brute force simulation completed.",
+    }
 
 async def _run_dos_attack(request_count: int) -> dict:
     target = DOS_TARGET_URL

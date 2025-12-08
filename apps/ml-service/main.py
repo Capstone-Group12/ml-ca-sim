@@ -15,6 +15,11 @@ from dos import (
     predict_dos,
     train_dos_model,
 )
+from brute_force import (
+    DETECTION_FEATURES as BRUTE_FORCE_FEATURES,
+    predict_bruteforce,
+    train_brute_force_model,
+)
 from port_probing import (
     DETECTION_FEATURES,
     predict_port_probing,
@@ -27,6 +32,8 @@ async def lifespan(app: FastAPI):
     app.state.model_metrics = None
     app.state.dos_model = None
     app.state.dos_model_metrics = None
+    app.state.brute_model = None
+    app.state.brute_model_metrics = None
     app.state.startup_error = None
     app.state.startup_errors = {}
     try:
@@ -49,6 +56,15 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         app.state.startup_errors["dos"] = f"Failed to load model: {exc}"
         logger.error("DoS model load failed: %s", exc)
+    try:
+        app.state.brute_model, app.state.brute_model_metrics = train_brute_force_model()
+        logger.info("Brute force ML model loaded successfully with metrics: %s", app.state.brute_model_metrics)
+    except FileNotFoundError as exc:
+        app.state.startup_errors["brute_force"] = str(exc)
+        logger.error("Brute force model file not found: %s", exc)
+    except Exception as exc:
+        app.state.startup_errors["brute_force"] = f"Failed to load model: {exc}"
+        logger.error("Brute force model load failed: %s", exc)
     yield
 
 app = FastAPI(
@@ -105,6 +121,21 @@ class DoSPredictionResponse(BaseModel):
     confidence: Optional[float] = None
     model_metrics: Optional[dict] = None
 
+class BruteForceSample(BaseModel):
+    dst_port: int = Field(..., ge=0, le=65535, description="Destination port")
+    flow_packets_s: float = Field(..., ge=0, description="Packets per second")
+    flow_duration: float = Field(..., ge=0, description="Flow duration (microseconds)")
+    total_fwd_packet: int = Field(..., ge=0, description="Packets in the forward flow")
+    syn_flag_count: int = Field(..., ge=0, description="SYN flag count")
+    ack_flag_count: int = Field(..., ge=0, description="ACK flag count")
+    src_ip: str = Field(..., description="Source IP address")
+    dst_ip: str = Field(..., description="Destination IP address")
+
+class BruteForcePredictionResponse(BaseModel):
+    is_bruteforce: bool
+    confidence: Optional[float] = None
+    model_metrics: Optional[dict] = None
+
 @app.get("/")
 @app.get("/ml")
 @app.get("/ml/")
@@ -113,6 +144,7 @@ def index() -> Dict[str, str]:
         "message": "ML service is running",
         "predict_endpoint": "/ml/predict",
         "dos_predict_endpoint": "/ml/dos/predict",
+        "bruteforce_predict_endpoint": "/ml/bruteforce/predict",
         "health_endpoint": "/ml/health",
         "metrics_endpoint": "/ml/metrics",
     }
@@ -133,6 +165,11 @@ def health() -> Dict[str, object]:
             "model_ready": app.state.dos_model is not None,
             "startup_error": app.state.startup_errors.get("dos"),
             "features": DOS_FEATURES,
+        },
+        "brute_force": {
+            "model_ready": app.state.brute_model is not None,
+            "startup_error": app.state.startup_errors.get("brute_force"),
+            "features": BRUTE_FORCE_FEATURES,
         },
     }
 
@@ -215,6 +252,42 @@ def predict_dos_attack(sample: DoSSample) -> DoSPredictionResponse:
         model_metrics=app.state.dos_model_metrics,
     )
 
+@app.post("/bruteforce/predict", response_model=BruteForcePredictionResponse)
+@app.post("/ml/bruteforce/predict", response_model=BruteForcePredictionResponse)
+def predict_bruteforce_attack(sample: BruteForceSample) -> BruteForcePredictionResponse:
+    start = time.perf_counter()
+    path = "/bruteforce/predict"
+    method = "POST"
+    if app.state.brute_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail=app.state.startup_errors.get("brute_force")
+            or "Brute force model not yet available for inference",
+        )
+
+    normalized_sample = _normalize_bruteforce_sample(sample)
+
+    try:
+        label, confidence = predict_bruteforce(app.state.brute_model, normalized_sample)
+    except Exception as exc:
+        REQUEST_COUNT.labels(path=path, method=method, status=500).inc()
+        raise HTTPException(status_code=500, detail=f"Failed to run brute force inference: {exc}")
+
+    duration = time.perf_counter() - start
+    REQUEST_COUNT.labels(path=path, method=method, status=200).inc()
+    REQUEST_LATENCY.labels(path=path, method=method).observe(duration)
+    logger.info(
+        "bruteforce predict completed status=200 duration_ms=%.2f confidence=%s",
+        duration * 1000,
+        confidence,
+    )
+
+    return BruteForcePredictionResponse(
+        is_bruteforce=bool(label),
+        confidence=confidence,
+        model_metrics=app.state.brute_model_metrics,
+    )
+
 def _normalize_port_sample(sample: TrafficSample) -> Dict[str, float]:
     payload = sample.model_dump()
     payload["l4_tcp"] = int(payload["l4_tcp"])
@@ -230,6 +303,19 @@ def _normalize_dos_sample(sample: DoSSample) -> Dict[str, object]:
         "Total Fwd Packet": data["total_fwd_packet"],
         "Flow Duration": data["flow_duration"],
         "Total Length of Fwd Packet": data["total_length_of_fwd_packet"],
+        "Src IP": data["src_ip"],
+        "Dst IP": data["dst_ip"],
+    }
+
+def _normalize_bruteforce_sample(sample: BruteForceSample) -> Dict[str, object]:
+    data = sample.model_dump()
+    return {
+        "Dst Port": data["dst_port"],
+        "Flow Packets/s": data["flow_packets_s"],
+        "Flow Duration": data["flow_duration"],
+        "Total Fwd Packet": data["total_fwd_packet"],
+        "SYN Flag Count": data["syn_flag_count"],
+        "ACK Flag Count": data["ack_flag_count"],
         "Src IP": data["src_ip"],
         "Dst IP": data["dst_ip"],
     }
