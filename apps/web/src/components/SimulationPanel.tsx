@@ -140,7 +140,7 @@ export default function SimulationPanel() {
             response,
             verdict: avgConf !== null ? avgConf >= 0.5 : false,
             confidence: avgConf,
-            message: body?.note,
+            message: body?.note && body.note !== "DoS simulation completed." ? body.note : undefined,
           },
         ];
       } else {
