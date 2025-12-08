@@ -22,6 +22,8 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 from models import Attack, AttackType, MLModel, ScanCSV, ScanRow
 
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://capstone-ml:8001/predict")
+ML_SERVICE_DOS_URL = os.getenv("ML_SERVICE_DOS_URL", "http://capstone-ml:8001/dos/predict")
+DOS_TARGET_URL = "https://mlcasim-api.edwardnafornita.com/output-json"
 FRONTEND_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
@@ -30,7 +32,10 @@ FRONTEND_ORIGINS = [
 ]
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data.json")
 ROOT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = ROOT_DIR.parent.parent
 SIMULATIONS_DIR = ROOT_DIR / "simulations"
+if not SIMULATIONS_DIR.exists():
+    SIMULATIONS_DIR = PROJECT_ROOT / "simulations"
 GENERATED_DIR = SIMULATIONS_DIR / "generated_payloads"
 GENERATED_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -46,6 +51,8 @@ REQUEST_COUNT = Counter(
 REQUEST_LATENCY = Histogram(
     "api_request_duration_seconds", "API request latency", ["path", "method"]
 )
+
+DOS_STORE: List[dict] = []
 
 app = FastAPI(title="Attack API")
 app.add_middleware(
@@ -131,7 +138,11 @@ async def predict(attack: Attack):
     return {"attack": payload, "mlResult": result}
 
 class RunAttackRequest(BaseModel):
-    attack: str = Field(..., description="Attack name, only 'Port Probing' is supported")
+    attack: str = Field(..., description="Attack name, supports 'Port Probing' and 'DOS'")
+    requestCount: Optional[int] = Field(
+        default=100,
+        description="The number of packets sent to the ML Service",
+    )
     max_age_seconds: Optional[int] = Field(
         default=None,
         description="If provided, reuse the latest generated payload when it is fresher than this age.",
@@ -155,10 +166,10 @@ def _row_to_ml_payload(row: ScanRow, prev_ts: Optional[datetime]) -> dict:
         "l4_udp": False,
     }
 
-async def _post_to_ml(payload: dict) -> dict:
+async def _post_to_ml(payload: dict, ml_url: str = ML_SERVICE_URL) -> dict:
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(ML_SERVICE_URL, json=payload)
+            resp = await client.post(ml_url, json=payload)
             resp.raise_for_status()
             return resp.json()
     except httpx.HTTPStatusError as exc:
@@ -169,11 +180,11 @@ async def _post_to_ml(payload: dict) -> dict:
     except httpx.RequestError as exc:
         raise HTTPException(status_code=502, detail=f"ML service request failed: {exc}") from exc
 
-async def _predict_batch(payloads: Sequence[dict]) -> List[dict]:
+async def _predict_batch(payloads: Sequence[dict], ml_url: str = ML_SERVICE_URL) -> List[dict]:
     results: List[dict] = []
     for payload in payloads:
         try:
-            ml = await _post_to_ml(payload)
+            ml = await _post_to_ml(payload, ml_url=ml_url)
             if "model_metrics" in ml:
                 # log-only: drop metrics from response, keep on server side
                 print("model_metrics:", ml.get("model_metrics"))
@@ -183,7 +194,7 @@ async def _predict_batch(payloads: Sequence[dict]) -> List[dict]:
             results.append({"input": payload, "error": exc.detail})
     return results
 
-async def _execute_port_probing(timeout_s: float = 12.0) -> Path:
+async def _execute_port_probing(timeout_s: float = 200.0, param: int = 100) -> Path:
     """
     Run the port probing simulation script and return once the process finishes.
     Raises TimeoutError on timeout and RuntimeError on non-zero exit.
@@ -196,12 +207,16 @@ async def _execute_port_probing(timeout_s: float = 12.0) -> Path:
     cmd = [
         sys.executable,
         str(script),
+        str(param),
         "--use-default-common",
         "--out-prefix",
         str(prefix),
     ]
     proc = await asyncio.create_subprocess_exec(
-        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        cwd=str(SIMULATIONS_DIR.parent),
     )
     try:
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout_s)
@@ -237,6 +252,36 @@ def _latest_payload_path() -> Optional[Path]:
     )
     return files[0] if files else None
 
+async def _execute_dos_simulation(target_url: str, count: int, timeout_s: float = 200.0) -> tuple[str, str]:
+    script = SIMULATIONS_DIR / "dos.py"
+    if not script.exists():
+        raise RuntimeError(f"DoS simulation script not found at {script}")
+
+    cmd = [
+        sys.executable,
+        str(script),
+        target_url,
+        str(count),
+    ]
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        cwd=str(SIMULATIONS_DIR.parent),
+    )
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout_s)
+    except asyncio.TimeoutError as exc:
+        proc.kill()
+        await proc.communicate()
+        raise TimeoutError("DoS simulation timed out") from exc
+
+    if proc.returncode != 0:
+        err = stderr.decode().strip() or stdout.decode().strip() or "unknown error"
+        raise RuntimeError(f"DoS simulation failed: {err}")
+
+    return stdout.decode(), stderr.decode()
+
 @app.post("/predict-from-scan-json")
 @app.post("/api/predict-from-scan-json")
 async def predict_from_scan_json(raw: List[dict]):
@@ -265,12 +310,17 @@ async def predict_from_scan_csv(body: ScanCSV):
 @app.post("/api/run-attack")
 async def run_attack(body: RunAttackRequest):
     attack = body.attack.lower()
-    if attack not in ("port probing", "port_probing", "port-probing", "portprobing"):
-        raise HTTPException(status_code=400, detail="Attack not implemented; only Port Probing is supported.")
+    request_count = int(body.requestCount or 0)
+    if attack in ("port probing", "port_probing", "port-probing", "portprobing"):
+        return await _run_port_probing(request_count, body.max_age_seconds)
+    if attack in ("dos", "ddos", "dos attack", "denial of service"):
+        return await _run_dos_attack(request_count)
+    raise HTTPException(status_code=400, detail="Attack not implemented; supported: Port Probing, DOS.")
 
+async def _run_port_probing(requestCount: int, max_age: Optional[int]) -> dict:
+    requestCount = max(requestCount, 1)
     source = "generated"
     exec_error = None
-    max_age = body.max_age_seconds
 
     latest = _latest_payload_path()
     if max_age is not None and latest:
@@ -283,7 +333,7 @@ async def run_attack(body: RunAttackRequest):
 
     if source != "cached":
         try:
-            await _execute_port_probing()
+            await _execute_port_probing(param=requestCount)
             logger.info("port probing simulation executed successfully")
         except TimeoutError:
             source = "cached"
@@ -309,6 +359,8 @@ async def run_attack(body: RunAttackRequest):
         payloads.append(_row_to_ml_payload(r, prev_ts))
         prev_ts = r.timestamp
 
+    payloads = payloads[: max(requestCount, 1)]
+    payload_data = payload_data[: len(payloads)]
     results = await _predict_batch(payloads)
     response = {
         "source": source,
@@ -327,6 +379,59 @@ async def run_attack(body: RunAttackRequest):
         exec_error or "",
     )
     return response
+
+async def _run_dos_attack(request_count: int) -> dict:
+    target = DOS_TARGET_URL
+    request_count = max(request_count, 1)
+    payloads = [{"msg": "malicious traffic"} for _ in range(request_count)]
+    DOS_STORE.clear()
+    DOS_STORE.extend(payloads)
+
+    note = ""
+    try:
+        stdout, stderr = await _execute_dos_simulation(target, request_count)
+        logger.info("dos simulation executed successfully target=%s count=%d", target, request_count)
+        if stdout.strip() or stderr.strip():
+            note = (stdout.strip() + " " + stderr.strip()).strip()
+    except Exception as exc:
+        note = f"DoS simulation had errors: {exc}"
+        logger.warning(note)
+
+    ml_payloads = []
+    for idx, _ in enumerate(DOS_STORE):
+        burst_factor = 1 + (idx % 10)
+        ml_payloads.append(
+            {
+                "dst_port": 80,
+                "flow_packets_s": 800 + (burst_factor * 50),
+                "flow_bytes_s": 6000000 + (burst_factor * 250000),
+                "total_fwd_packet": 700 + (burst_factor * 25),
+                "flow_duration": 750000 + (burst_factor * 500),
+                "total_length_of_fwd_packet": 5000000 + (burst_factor * 50000),
+                "src_ip": f"10.0.0.98",
+                "dst_ip": "192.168.50.253",
+            }
+        )
+
+    results = await _predict_batch(ml_payloads, ml_url=ML_SERVICE_DOS_URL)
+    confidences = []
+    for r in results:
+        ml = r.get("ml") or {}
+        conf = ml.get("confidence")
+        if isinstance(conf, (int, float)):
+            confidences.append(float(conf))
+    avg_conf = sum(confidences) / len(confidences) if confidences else None
+
+    DOS_STORE.clear()
+    return {
+        "source": "simulation",
+        "target": target,
+        "count": request_count,
+        "payload": payloads,
+        "results": results,
+        "average_confidence": avg_conf,
+        "note": note or "DoS simulation completed.",
+    }
 
 @app.post("/output-json", status_code=status.HTTP_403_FORBIDDEN)
 @app.post("/api/output-json", status_code=status.HTTP_403_FORBIDDEN)

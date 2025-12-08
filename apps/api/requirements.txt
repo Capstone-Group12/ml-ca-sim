@@ -3,3 +3,4 @@ httpx
 uvicorn[standard]
 pydantic
 prometheus-client
+requests
