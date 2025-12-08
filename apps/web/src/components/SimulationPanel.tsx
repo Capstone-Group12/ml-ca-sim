@@ -206,8 +206,8 @@ export default function SimulationPanel() {
             {attackType === "DOS" ? (
               <>
                 <option value={1000}>1k requests</option>
+                <option value={2000}>2k requests</option>
                 <option value={5000}>5k requests</option>
-                <option value={10000}>10k requests</option>
               </>
             ) : (
               <>
@@ -250,7 +250,7 @@ export default function SimulationPanel() {
         <div className="mt-5 rounded-lg border border-white/10 bg-slate-900/70 p-4 shadow-inner">
           <div className="mb-3">
             <h2 className="text-xl font-semibold text-white">
-              ML Decisions ({scenarios.length} request{scenarios.length === 1 ? "" : "s"})
+              ML Decisions ({scenarios.length} response{scenarios.length === 1 ? "" : "s"})
             </h2>
             <p className="text-sm text-slate-300">
               Each entry shows the single payload sent and the corresponding response.
@@ -265,7 +265,7 @@ export default function SimulationPanel() {
               >
                 <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                   <div className="text-sm font-semibold text-white">
-                    Request #{scenario.requestId}: Attack detected:{" "}
+                    Response #{scenario.requestId}: Attack detected:{" "}
                     <span className={scenario.verdict ? "text-emerald-300" : "text-red-400"}>
                       {scenario.verdict ? "True" : "False"}
                     </span>
