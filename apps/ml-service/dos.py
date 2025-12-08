@@ -90,8 +90,8 @@ def find_dos(df: pd.DataFrame) -> pd.DataFrame:
     #   -> request flood in 1 flow (> 1000 packets)
     rule_score = (
         df["Dst Port"].isin([80, 443, 8080, 8443]).astype(int) * 25
-        + (df["Flow Packets/s"] > 500).astype(int) * 25
-        + (df["Flow Bytes/s"] > 5000000).astype(int) * 25
+        + (df["Flow Packets/s"] > 25).astype(int) * 25
+        + (df["Flow Bytes/s"] > 100).astype(int) * 25
         + (df["Total Fwd Packet"] > 500).astype(int) * 25
     )
 
@@ -99,8 +99,8 @@ def find_dos(df: pd.DataFrame) -> pd.DataFrame:
     #   -> since DoS attacks are so abnormal, we can do this without stats
     #   -> plus this is a lot faster than calculating z-score for 900k rows
     extreme_vals_score = (
-        (df["Flow Packets/s"] > 1000).astype(int) * 30    # super high packet rate!
-        + (df["Flow Bytes/s"] > 50000000).astype(int) * 30    # super high bandwidth!
+        (df["Flow Packets/s"] > 75).astype(int) * 30            # super high packet rate!
+        + (df["Flow Bytes/s"] > 50000000).astype(int) * 30      # super high bandwidth!
     )
 
     # now, we check if a single source is very active, with large volumes of traffic
@@ -138,8 +138,8 @@ def find_dos(df: pd.DataFrame) -> pd.DataFrame:
         request_flood = (
             df["Dst Port"].isin([80, 443, 8080, 8443])
             & (df["Flow Duration"] < 1000000)
-            & (df["Total Fwd Packet"] > 100)                # but so, so, so many requests!!
-            & (df["Flow Packets/s"] > 200)
+            & (df["Total Fwd Packet"] > 100)                # so, so, so many requests!!
+            & (df["Flow Packets/s"] > 50)
         )
         http_pattern_score += np.where(request_flood, 20, 0)
 
